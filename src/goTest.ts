@@ -154,6 +154,10 @@ export function runAutorunTest() {
 	});
 }
 
+export function clearAutorunTest() {
+	autorunTestConfig = null;
+}
+
 /**
  * Runs all tests in the package of the source of the active editor.
  *

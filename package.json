@@ -100,6 +100,16 @@
         "description": "Runs a unit test at the cursor."
       },
       {
+        "command": "go.test.autorunTest",
+        "title": "Go: Set Test to Autorun At Cursor",
+        "description": "Sets a test to autorun at the cursor."
+      },
+      {
+        "command": "go.test.clearAutorunTest",
+        "title": "Go: Clear Autorun",
+        "description": "Clears current autorun test"
+      },
+      {
         "command": "go.benchmark.cursor",
         "title": "Go: Benchmark Function At Cursor",
         "description": "Runs a benchmark at the cursor."

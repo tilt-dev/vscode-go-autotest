@@ -25,7 +25,7 @@ import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { initGoCover } from './goCover';
-import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace, setAutorunAtCursor, runAutorunTest } from './goTest';
+import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace, setAutorunAtCursor, runAutorunTest, clearAutorunTest } from './goTest';
 import { showTestOutput } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
@@ -340,6 +340,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	watcher.onDidDelete(runAutorunTest);
 
 	ctx.subscriptions.push(watcher);
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.clearAutorunTest', clearAutorunTest));
 
 	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null));
 }
