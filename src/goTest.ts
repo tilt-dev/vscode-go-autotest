@@ -140,6 +140,7 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 
 			// Remember this config as the autorun test
 			autorunTestConfig = testConfig;
+			updateAutorunStatus();
 
 			return goTest(testConfig);
 		});
@@ -150,6 +151,16 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 	}, err => {
 		console.error(err);
 	});
+}
+
+let autorunStatus: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
+function updateAutorunStatus() {
+	if (autorunTestConfig) {
+		autorunStatus.text = 'Autorun: ' + autorunTestConfig.functions[0];
+		autorunStatus.show();
+	} else {
+		autorunStatus.hide();
+	}
 }
 
 export function runAutorunTest() {
@@ -173,6 +184,7 @@ function clearAutorunTestInternal() {
 	if (autorunTestConfig) {
 		autorunTestStart = 0;
 		autorunTestConfig = null;
+		updateAutorunStatus();
 	}
 }
 
