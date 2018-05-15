@@ -66,6 +66,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		let isBenchmark = false;
 		setAutorunAtCursor(goConfig, isBenchmark, args);
+		testCodeLensProvider.rerenderCodeLenses();
 	}));
 
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
@@ -95,7 +96,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	watcher.onDidDelete(runAutorunTest);
 
 	ctx.subscriptions.push(watcher);
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.clearAutorunTest', clearAutorunTest));
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.clearAutorunTest', () => {
+		clearAutorunTest();
+		testCodeLensProvider.rerenderCodeLenses();
+	}));
 }
 
 export function deactivate() {

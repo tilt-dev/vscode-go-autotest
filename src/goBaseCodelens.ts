@@ -3,7 +3,7 @@ import vscode = require('vscode');
 
 export abstract class GoBaseCodeLensProvider implements vscode.CodeLensProvider {
 	protected enabled: boolean = true;
-	private onDidChangeCodeLensesEmitter = new vscode.EventEmitter<void>();
+	protected onDidChangeCodeLensesEmitter = new vscode.EventEmitter<void>();
 
 
 	public get onDidChangeCodeLenses(): vscode.Event<void> {

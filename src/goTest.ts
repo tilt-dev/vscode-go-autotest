@@ -158,6 +158,10 @@ export function clearAutorunTest() {
 	autorunTestConfig = null;
 }
 
+export function currentAutorunTestConfig(): TestConfig {
+	return autorunTestConfig;
+}
+
 /**
  * Runs all tests in the package of the source of the active editor.
  *
