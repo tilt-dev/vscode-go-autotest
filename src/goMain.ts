@@ -7,6 +7,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
+import _ = require('lodash');
 import { GoCompletionItemProvider } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
@@ -90,9 +91,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	let watcher = vscode.workspace.createFileSystemWatcher(
 		path.join(vscode.workspace.rootPath, '**', '*')
 	);
-	watcher.onDidChange(runAutorunTest);
-	watcher.onDidCreate(runAutorunTest);
-	watcher.onDidDelete(runAutorunTest);
+
+	let onChange = _.debounce(runAutorunTest, 200);
+	watcher.onDidChange(onChange);
+	watcher.onDidCreate(onChange);
+	watcher.onDidDelete(onChange);
 
 	ctx.subscriptions.push(watcher);
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.clearAutorunTest', () => {

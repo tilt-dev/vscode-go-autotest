@@ -34,6 +34,7 @@
     "console-stamp": "^0.2.2",
     "diff": "~3.3.0",
     "json-rpc2": "^1.0.2",
+    "lodash": "^4.17.10",
     "vscode": "^1.1.4",
     "vscode-debug-logger": "^0.0.4",
     "vscode-debugadapter": "^1.11.0",
@@ -84,9 +85,7 @@
         "description": "Clears current autorun test"
       }
     ],
-    "configuration": {
-    },
-    "menus": {
-    }
+    "configuration": {},
+    "menus": {}
   }
 }
