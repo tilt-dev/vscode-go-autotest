@@ -15,7 +15,7 @@ import { errorDiagnosticCollection, warningDiagnosticCollection } from './goMain
 
 const extensionId: string = 'windmill.wm-autorun';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
-const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217'; // TODO(nick): create our own key
+const aiKey: string = 'c490a00e-fb9a-4ee5-b30c-dd5ed51518aa';
 
 export const goKeywords: string[] = [
 	'break',
@@ -190,12 +190,6 @@ export function getGoVersion(): Promise<SemVersion> {
 	}
 
 	if (goVersion) {
-		/* __GDPR__
-		   "getGoVersion" : {
-			  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-		   }
-		 */
-		sendTelemetryEvent('getGoVersion', { version: `${goVersion.major}.${goVersion.minor}` });
 		return Promise.resolve(goVersion);
 	}
 	return new Promise<SemVersion>((resolve, reject) => {
@@ -206,19 +200,6 @@ export function getGoVersion(): Promise<SemVersion> {
 					major: parseInt(matches[1]),
 					minor: parseInt(matches[2])
 				};
-				/* __GDPR__
-				   "getGoVersion" : {
-					  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				   }
-				 */
-				sendTelemetryEvent('getGoVersion', { version: `${goVersion.major}.${goVersion.minor}` });
-			} else {
-				/* __GDPR__
-				   "getGoVersion" : {
-					  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				   }
-				 */
-				sendTelemetryEvent('getGoVersion', { version: stdout });
 			}
 			return resolve(goVersion);
 		});
@@ -274,9 +255,8 @@ export function sendTelemetryEvent(eventName: string, properties?: {
 }, measures?: {
 	[key: string]: number;
 }): void {
-  // TODO(nick): re-enable once we have keys
-	// telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
-	// telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
+	telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
+	telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
 }
 
 export function disposeTelemetryReporter(): Promise<any> {

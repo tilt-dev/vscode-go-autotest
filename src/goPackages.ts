@@ -53,13 +53,6 @@ function gopkgs(): Promise<Map<string, string>> {
 			});
 
 			let timeTaken = Date.now() - t0;
-			/* __GDPR__
-				"gopkgs" : {
-					"tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"timeTaken": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
-				}
-			*/
-			sendTelemetryEvent('gopkgs', {}, { timeTaken });
 			cacheTimeout = timeTaken > 5000 ? timeTaken : 5000;
 			return resolve(pkgs);
 		});
