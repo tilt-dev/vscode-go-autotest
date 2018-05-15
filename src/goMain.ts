@@ -6,6 +6,7 @@
 'use strict';
 
 import vscode = require('vscode');
+import path = require('path');
 import { GoCompletionItemProvider } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
@@ -24,7 +25,7 @@ import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { initGoCover } from './goCover';
-import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace } from './goTest';
+import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace, setAutorunAtCursor, runAutorunTest } from './goTest';
 import { showTestOutput } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
@@ -195,6 +196,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		testAtCursor(goConfig, isBenchmark, args);
 	}));
 
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.autoRunTest', (args) => {
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		let isBenchmark = false;
+		setAutorunAtCursor(goConfig, isBenchmark, args);
+	}));
+
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.benchmark.cursor', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		let isBenchmark = true;
@@ -324,6 +331,15 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 	});
+
+	let watcher = vscode.workspace.createFileSystemWatcher(
+		path.join(vscode.workspace.rootPath, '**', '*')
+	);
+	watcher.onDidChange(runAutorunTest);
+	watcher.onDidCreate(runAutorunTest);
+	watcher.onDidDelete(runAutorunTest);
+
+	ctx.subscriptions.push(watcher);
 
 	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null));
 }
