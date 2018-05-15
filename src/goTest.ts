@@ -36,7 +36,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 		return;
 	}
 
-	clearAutorunTestInternal();
+	clearAutorunTest();
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
@@ -99,7 +99,7 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 		return;
 	}
 
-	clearAutorunTestInternal();
+	clearAutorunTest();
 	sendTelemetryEvent('autorunTest', { args }, {});
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
@@ -176,12 +176,6 @@ export function clearAutorunTest() {
 	if (autorunTestConfig) {
 		let timeTaken = Date.now() - autorunTestStart;
 		sendTelemetryEvent('autorunTest-clear', {}, { timeTaken });
-		clearAutorunTestInternal();
-	}
-}
-
-function clearAutorunTestInternal() {
-	if (autorunTestConfig) {
 		autorunTestStart = 0;
 		autorunTestConfig = null;
 		updateAutorunStatus();
