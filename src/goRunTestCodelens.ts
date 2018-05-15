@@ -65,7 +65,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
 		const codelens: CodeLens[] = [];
-    
+
 		const testPromise = getTestFunctions(document, token).then(testFunctions => {
 			testFunctions.forEach(func => {
 

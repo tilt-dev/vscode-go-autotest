@@ -10,12 +10,14 @@ import vscode = require('vscode');
 import os = require('os');
 import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
 import { getCoverage } from './goCover';
+import { sendTelemetryEvent } from './util';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
 // the last test to be easily re-executed.
 let lastTestConfig: TestConfig;
 
 let autorunTestConfig: TestConfig;
+let autorunTestStart: number;
 
 /**
 * Executes the unit test at the primary cursor using `go test`. Output
@@ -33,6 +35,8 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
 		return;
 	}
+
+	clearAutorunTestInternal();
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
@@ -95,6 +99,9 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 		return;
 	}
 
+	clearAutorunTestInternal();
+	sendTelemetryEvent('autorunTest', { args }, {});
+
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
 	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
@@ -155,7 +162,18 @@ export function runAutorunTest() {
 }
 
 export function clearAutorunTest() {
-	autorunTestConfig = null;
+	if (autorunTestConfig) {
+		let timeTaken = Date.now() - autorunTestStart;
+		sendTelemetryEvent('autorunTest-clear', {}, { timeTaken });
+		clearAutorunTestInternal();
+	}
+}
+
+function clearAutorunTestInternal() {
+	if (autorunTestConfig) {
+		autorunTestStart = 0;
+		autorunTestConfig = null;
+	}
 }
 
 /**
