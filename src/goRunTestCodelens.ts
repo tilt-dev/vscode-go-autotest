@@ -12,6 +12,7 @@ import { getTestFunctions, getBenchmarkFunctions, getTestFlags } from './testUti
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getCurrentGoPath } from './util';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
+import { currentAutorunTestConfig } from './goTest';
 
 export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	private readonly debugConfig: any = {
@@ -50,6 +51,10 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		});
 	}
 
+	public rerenderCodeLenses() {
+		this.onDidChangeCodeLensesEmitter.fire();
+	}
+
 	private getCodeLensForPackage(document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
 		let documentSymbolProvider = new GoDocumentSymbolProvider();
 		return documentSymbolProvider.provideDocumentSymbols(document, token)
@@ -65,15 +70,24 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
 		const codelens: CodeLens[] = [];
-    
+
 		const testPromise = getTestFunctions(document, token).then(testFunctions => {
 			testFunctions.forEach(func => {
 
-				let autorunTestCmd: Command = {
-					title: 'autorun test',
-					command: 'go.test.autoRunTest',
-					arguments: [{functionName: func.name }]
-				};
+				let autorun = currentAutorunTestConfig();
+				let autorunTestCmd: Command;
+				if (autorun && autorun.functions && autorun.functions.indexOf(func.name) !== -1) {
+					autorunTestCmd = {
+						title: 'clear autorun',
+						command: 'go.test.clearAutorunTest'
+					};
+				} else {
+					autorunTestCmd = {
+						title: 'autorun test',
+						command: 'go.test.autoRunTest',
+						arguments: [{functionName: func.name }]
+					};
+				}
 
 				codelens.push(new CodeLens(func.location.range, autorunTestCmd));
 			});
