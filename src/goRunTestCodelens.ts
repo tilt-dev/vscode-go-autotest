@@ -58,14 +58,6 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 				if (pkg) {
 					const range = pkg.location.range;
 					return [
-						new CodeLens(range, {
-							title: 'run package tests',
-							command: 'go.test.package'
-						}),
-						new CodeLens(range, {
-							title: 'run file tests',
-							command: 'go.test.file'
-						})
 					];
 				}
 			});
@@ -73,34 +65,9 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
 		const codelens: CodeLens[] = [];
-
-		const program = path.dirname(document.fileName);
-		const env = Object.assign({}, this.debugConfig.env, vsConfig['testEnvVars']);
-		const envFile = vsConfig['testEnvFile'];
-		const buildFlags = getTestFlags(vsConfig, null);
-		if (vsConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
-			buildFlags.push('-tags');
-			buildFlags.push(`${vsConfig['buildTags']}`);
-		}
-		const currentDebugConfig = Object.assign({}, this.debugConfig, { program, env, envFile, buildFlags: buildFlags.map(x => `'${x}'`).join(' ') });
-
+    
 		const testPromise = getTestFunctions(document, token).then(testFunctions => {
 			testFunctions.forEach(func => {
-				let runTestCmd: Command = {
-					title: 'run test',
-					command: 'go.test.cursor',
-					arguments: [{ functionName: func.name }]
-				};
-
-				codelens.push(new CodeLens(func.location.range, runTestCmd));
-
-				let debugTestCmd: Command = {
-					title: 'debug test',
-					command: 'go.debug.startSession',
-					arguments: [Object.assign({}, currentDebugConfig, { args: ['-test.run', '^' + func.name + '$'] })]
-				};
-
-				codelens.push(new CodeLens(func.location.range, debugTestCmd));
 
 				let autorunTestCmd: Command = {
 					title: 'autorun test',
@@ -112,27 +79,6 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 			});
 		});
 
-		const benchmarkPromise = getBenchmarkFunctions(document, token).then(benchmarkFunctions => {
-			benchmarkFunctions.forEach(func => {
-				let runBenchmarkCmd: Command = {
-					title: 'run benchmark',
-					command: 'go.benchmark.cursor',
-					arguments: [{ functionName: func.name }]
-				};
-
-				codelens.push(new CodeLens(func.location.range, runBenchmarkCmd));
-
-				let debugTestCmd: Command = {
-					title: 'debug benchmark',
-					command: 'go.debug.startSession',
-					arguments: [Object.assign({}, currentDebugConfig, { args: ['-test.bench', '^' + func.name + '$', '-test.run', 'a^'] })]
-				};
-
-				codelens.push(new CodeLens(func.location.range, debugTestCmd));
-			});
-
-		});
-
-		return Promise.all([testPromise, benchmarkPromise]).then(() => codelens);
+		return testPromise.then(() => codelens);
 	}
 }

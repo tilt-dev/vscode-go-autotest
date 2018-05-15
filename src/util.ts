@@ -13,9 +13,9 @@ import os = require('os');
 import { outputChannel } from './goStatus';
 import { errorDiagnosticCollection, warningDiagnosticCollection } from './goMain';
 
-const extensionId: string = 'ms-vscode.Go';
+const extensionId: string = 'windmill.wm-autorun';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
-const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217';
+const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217'; // TODO(nick): create our own key
 
 export const goKeywords: string[] = [
 	'break',
@@ -274,9 +274,9 @@ export function sendTelemetryEvent(eventName: string, properties?: {
 }, measures?: {
 	[key: string]: number;
 }): void {
-
-	telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
-	telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
+  // TODO(nick): re-enable once we have keys
+	// telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
+	// telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
 }
 
 export function disposeTelemetryReporter(): Promise<any> {
