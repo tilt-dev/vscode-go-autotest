@@ -15,6 +15,8 @@ import { getCoverage } from './goCover';
 // the last test to be easily re-executed.
 let lastTestConfig: TestConfig;
 
+let autorunTestConfig: TestConfig;
+
 /**
 * Executes the unit test at the primary cursor using `go test`. Output
 * is sent to the 'Go' channel.
@@ -78,6 +80,76 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 			return getCoverage(tmpCoverPath);
 		}
 	}, err => {
+		console.error(err);
+	});
+}
+
+export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
+	let editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showInformationMessage('No editor is active.');
+		return;
+	}
+	if (!editor.document.fileName.endsWith('_test.go')) {
+		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
+		return;
+	}
+
+	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
+
+	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
+
+	editor.document.save().then(() => {
+		return getFunctions(editor.document, null).then(testFunctions => {
+			let testFunctionName: string;
+
+			// We use functionName if it was provided as argument
+			// Otherwise find any test function containing the cursor.
+			if (args && args.functionName) {
+				testFunctionName = args.functionName;
+			} else {
+				for (let func of testFunctions) {
+					let selection = editor.selection;
+					if (selection && func.location.range.contains(selection.start)) {
+						testFunctionName = func.name;
+						break;
+					}
+				};
+			}
+
+			if (!testFunctionName) {
+				vscode.window.showInformationMessage('No test function found at cursor.');
+				return;
+			}
+
+			const testConfig = {
+				goConfig: goConfig,
+				dir: path.dirname(editor.document.fileName),
+				flags: testFlags,
+				functions: [testFunctionName],
+				isBenchmark: isBenchmark,
+				showTestCoverage: true
+			};
+
+			// Remember this config as the autorun test
+			autorunTestConfig = testConfig;
+
+			return goTest(testConfig);
+		});
+	}).then(success => {
+		if (success && tmpCoverPath) {
+			return getCoverage(tmpCoverPath);
+		}
+	}, err => {
+		console.error(err);
+	});
+}
+
+export function runAutorunTest() {
+	if (!autorunTestConfig) {
+		return;
+	}
+	goTest(autorunTestConfig).then(null, err => {
 		console.error(err);
 	});
 }
