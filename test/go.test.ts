@@ -12,7 +12,6 @@ import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 import { GoDefinitionProvider } from '../src/goDeclaration';
 import { getWorkspaceSymbols } from '../src/goSymbol';
-import { check } from '../src/goCheck';
 import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
@@ -255,42 +254,6 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Error checking', (done) => {
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'package' },
-			'vetFlags': { value: ['-all'] },
-			'lintOnSave': { value: 'package' },
-			'lintTool': { value: 'golint' },
-			'lintFlags': { value: [] }
-		});
-		let expected = [
-			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },
-			{ line: 11, severity: 'error', msg: 'undefined: prin' },
-		];
-		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
-				// golint is not supported in Go 1.5, so skip the test
-				return Promise.resolve();
-			}
-			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
-				let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
-				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
-				let matchCount = 0;
-				for (let i in expected) {
-					for (let j in sortedDiagnostics) {
-						if (expected[i].line
-							&& (expected[i].line === sortedDiagnostics[j].line)
-							&& (expected[i].severity === sortedDiagnostics[j].severity)
-							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
-							matchCount++;
-						}
-					}
-				}
-				assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
-			});
-		}).then(() => done(), done);
-	});
-
 	test('Test Generate unit tests squeleton for file', (done) => {
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
@@ -368,52 +331,6 @@ It returns the number of bytes written and any write error encountered.
 				} else {
 					return Promise.reject('generatetests_test.go not found');
 				}
-			});
-		}).then(() => done(), done);
-	});
-
-	test('Gometalinter error checking', (done) => {
-		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
-				// golint in gometalinter is not supported in Go 1.5, so skip the test
-				return Promise.resolve();
-			}
-
-			let config = Object.create(vscode.workspace.getConfiguration('go'), {
-				'lintOnSave': { value: 'package' },
-				'lintTool': { value: 'gometalinter' },
-				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
-				'vetOnSave': { value: 'off' },
-				'buildOnSave': { value: 'off' }
-			});
-			let expected = [
-				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
-			];
-			let errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
-			return check(vscode.Uri.file(errorsTestPath), config).then(diagnostics => {
-				let sortedDiagnostics = diagnostics.sort((a, b) => {
-					if (a.msg < b.msg)
-						return -1;
-					if (a.msg > b.msg)
-						return 1;
-					return 0;
-				});
-
-				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
-				let matchCount = 0;
-				for (let i in expected) {
-					for (let j in sortedDiagnostics) {
-						if ((expected[i].line === sortedDiagnostics[j].line)
-							&& (expected[i].severity === sortedDiagnostics[j].severity)
-							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
-							matchCount++;
-						}
-					}
-				}
-				assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
-
-				return Promise.resolve();
 			});
 		}).then(() => done(), done);
 	});
@@ -979,47 +896,6 @@ It returns the number of bytes written and any write error encountered.
 		}, (e) => {
 			assert.ok(e);
 		}).then(() => done(), done);
-	});
-
-	test('Build Tags checking', (done) => {
-		const config1 = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'off' },
-			'lintOnSave': { value: 'off' },
-			'buildOnSave': { value: 'package' },
-			'buildTags': { value: 'randomtag' }
-		});
-
-		const checkWithTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config1).then(diagnostics => {
-			assert.equal(1, diagnostics.length, 'check with buildtag failed. Unexpected errors found');
-			assert.equal(diagnostics[0].msg, 'undefined: fmt.Prinln');
-		});
-
-		const config2 = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'off' },
-			'lintOnSave': { value: 'off' },
-			'buildOnSave': { value: 'package' },
-			'buildTags': { value: 'randomtag othertag' }
-		});
-
-		const checkWithMultipleTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config2).then(diagnostics => {
-			assert.equal(1, diagnostics.length, 'check with multiple buildtags failed. Unexpected errors found');
-			assert.equal(diagnostics[0].msg, 'undefined: fmt.Prinln');
-		});
-
-		const config3 = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'off' },
-			'lintOnSave': { value: 'off' },
-			'buildOnSave': { value: 'package' },
-			'buildTags': { value: '' }
-		});
-
-		const checkWithoutTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config3).then(diagnostics => {
-			assert.equal(1, diagnostics.length, 'check without buildtags failed. Unexpected errors found');
-			assert.equal(diagnostics[0].msg.indexOf('can\'t load package: package test/testfixture/buildTags') > -1, true, `check without buildtags failed. Go files not excluded. ${diagnostics[0].msg}`);
-		});
-
-		Promise.all([checkWithTags, checkWithMultipleTags, checkWithoutTags]).then(() => done(), done);
-
 	});
 
 	test('Add imports when no imports', (done) => {

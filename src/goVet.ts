@@ -1,40 +1,8 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, SemVersion } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, getWorkspaceFolderPath, getGoVersion, SemVersion } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
-
-/**
- * Runs go vet in the current package or workspace.
- */
-export function vetCode(vetWorkspace?: boolean) {
-	let editor = vscode.window.activeTextEditor;
-	if (!editor && !vetWorkspace) {
-		vscode.window.showInformationMessage('No editor is active, cannot find current package to vet');
-		return;
-	}
-	if (editor.document.languageId !== 'go' && !vetWorkspace) {
-		vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to vet');
-		return;
-	}
-
-	let documentUri = editor ? editor.document.uri : null;
-	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
-
-	outputChannel.clear(); // Ensures stale output from vet on save is cleared
-	diagnosticsStatusBarItem.show();
-	diagnosticsStatusBarItem.text = 'Vetting...';
-
-	goVet(documentUri, goConfig, vetWorkspace)
-		.then(warnings => {
-			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
-			diagnosticsStatusBarItem.hide();
-		})
-		.catch(err => {
-			vscode.window.showInformationMessage('Error: ' + err);
-			diagnosticsStatusBarItem.text = 'Vetting Failed';
-		});
-}
 
 /**
  * Runs go vet or go tool vet and presents the output in the 'Go' channel and in the diagnostic collections.

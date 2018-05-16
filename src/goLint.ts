@@ -1,39 +1,8 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath } from './util';
+import { getToolsEnvVars, resolvePath, runTool, ICheckResult, getWorkspaceFolderPath } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
-/**
- * Runs linter in the current package or workspace.
- */
-export function lintCode(lintWorkspace?: boolean) {
-	let editor = vscode.window.activeTextEditor;
-	if (!editor && !lintWorkspace) {
-		vscode.window.showInformationMessage('No editor is active, cannot find current package to lint');
-		return;
-	}
-	if (editor.document.languageId !== 'go' && !lintWorkspace) {
-		vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to lint');
-		return;
-	}
-
-	let documentUri = editor ? editor.document.uri : null;
-	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
-
-	outputChannel.clear(); // Ensures stale output from lint on save is cleared
-	diagnosticsStatusBarItem.show();
-	diagnosticsStatusBarItem.text = 'Linting...';
-
-	goLint(documentUri, goConfig, lintWorkspace)
-		.then(warnings => {
-			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
-			diagnosticsStatusBarItem.hide();
-		})
-		.catch(err => {
-			vscode.window.showInformationMessage('Error: ' + err);
-			diagnosticsStatusBarItem.text = 'Linting Failed';
-		});
-}
 
 /**
  * Runs linter and presents the output in the 'Go' channel and in the diagnostic collections.
