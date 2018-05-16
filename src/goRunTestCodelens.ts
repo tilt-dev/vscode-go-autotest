@@ -76,7 +76,8 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 				let autorun = currentAutorunTestConfig();
 				let autorunTestCmd: Command;
-				if (autorun && autorun.functions && autorun.functions.indexOf(func.name) !== -1) {
+				if (autorun && autorun.functions &&
+					autorun.functions.findIndex((f: vscode.SymbolInformation) => f.name === func.name) !== -1) {
 					autorunTestCmd = {
 						title: 'clear autorun',
 						command: 'go.test.clearAutorunTest'
@@ -85,7 +86,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 					autorunTestCmd = {
 						title: 'autorun test',
 						command: 'go.test.autoRunTest',
-						arguments: [{functionName: func.name }]
+						arguments: [{ symbol: func }]
 					};
 				}
 

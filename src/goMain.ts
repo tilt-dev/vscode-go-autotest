@@ -24,7 +24,7 @@ import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { initGoCover } from './goCover';
-import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace, setAutorunAtCursor, runAutorunTest, clearAutorunTest } from './goTest';
+import { setAutorunAtCursor, runAutorunTest, clearAutorunTest } from './goTest';
 import { showTestOutput } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';

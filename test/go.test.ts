@@ -15,7 +15,6 @@ import { getWorkspaceSymbols } from '../src/goSymbol';
 import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
-import { testCurrentFile } from '../src/goTest';
 import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols } from '../src/goOutline';
 import { listPackages, getTextEditForAddImport } from '../src/goImport';
@@ -419,22 +418,6 @@ It returns the number of bytes written and any write error encountered.
 				});
 			}).then(() => done(), done);
 		});
-	});
-
-	test('Test Env Variables are passed to Tests', (done) => {
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue', 'dummyNonString': 1 } }
-		});
-
-		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
-		vscode.workspace.openTextDocument(uri).then(document => {
-			return vscode.window.showTextDocument(document).then(editor => {
-				return testCurrentFile(config, []).then((result: boolean) => {
-					assert.equal(result, true);
-					return Promise.resolve();
-				});
-			});
-		}).then(() => done(), done);
 	});
 
 	test('Test Outline', (done) => {
