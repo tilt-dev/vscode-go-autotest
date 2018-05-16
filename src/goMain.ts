@@ -14,7 +14,8 @@ import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
-import { setAutorunAtCursor, runAutorunTest, clearAutorunTest, showAutorunTest } from './goTest';
+import { setAutorunAtCursor, runAutorunTest, clearAutorunTest, showAutorunTest,  testCurrentFileSilently } from './goTest';
+import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, disposeTelemetryReporter, getToolsEnvVars } from './util';
 import { LanguageClient, RevealOutputChannelOn } from 'vscode-languageclient';
@@ -75,6 +76,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.showAutorunTest', showAutorunTest));
+	vscode.window.onDidChangeActiveTextEditor(cachePackageTests);
 }
 
 export function deactivate() {
@@ -94,3 +96,14 @@ function didLangServerConfigChange(useLangServer: boolean, langServerFlags: stri
 	}
 	return false;
 }
+
+function loadPackages() {
+	getAllPackages();
+}
+
+function cachePackageTests(v: vscode.TextEditor) {
+	let goConfig = vscode.workspace.getConfiguration('go', v ? v.document.uri : null);
+
+	testCurrentFileSilently(goConfig, []);
+}
+
