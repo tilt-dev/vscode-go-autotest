@@ -14,7 +14,6 @@ import { getNonVendorPackages } from './goPackages';
 
 let outputChannel = vscode.window.createOutputChannel('Go Tests');
 
-
 /**
  * Input to goTest.
  */
@@ -34,7 +33,7 @@ export interface TestConfig {
 	/**
 	 * Specific function names to test.
 	 */
-	functions?: string[];
+	functions?: vscode.SymbolInformation[];
 	/**
 	 * Test was not requested explicitly. The output should not appear in the UI.
 	 */
@@ -242,7 +241,8 @@ function expandFilePathInOutput(output: string, cwd: string): string {
  */
 function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
-		return Promise.resolve([testconfig.isBenchmark ? '-bench' : '-run', util.format('^%s$', testconfig.functions.join('|'))]);
+		let names = testconfig.functions.map((f) => f.name);
+		return Promise.resolve([testconfig.isBenchmark ? '-bench' : '-run', util.format('^%s$', names.join('|'))]);
 	} else if (testconfig.includeSubDirectories && !testconfig.isBenchmark) {
 		return getGoVersion().then((ver: SemVersion) => {
 			if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {

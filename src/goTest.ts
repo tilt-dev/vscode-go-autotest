@@ -12,81 +12,8 @@ import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctio
 import { getCoverage } from './goCover';
 import { sendTelemetryEvent } from './util';
 
-// lastTestConfig holds a reference to the last executed TestConfig which allows
-// the last test to be easily re-executed.
-let lastTestConfig: TestConfig;
-
 let autorunTestConfig: TestConfig;
 let autorunTestStart: number;
-
-/**
-* Executes the unit test at the primary cursor using `go test`. Output
-* is sent to the 'Go' channel.
-*
-* @param goConfig Configuration for the Go extension.
-*/
-export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
-	let editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		vscode.window.showInformationMessage('No editor is active.');
-		return;
-	}
-	if (!editor.document.fileName.endsWith('_test.go')) {
-		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
-		return;
-	}
-
-	clearAutorunTest();
-
-	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
-
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
-
-	editor.document.save().then(() => {
-		return getFunctions(editor.document, null).then(testFunctions => {
-			let testFunctionName: string;
-
-			// We use functionName if it was provided as argument
-			// Otherwise find any test function containing the cursor.
-			if (args && args.functionName) {
-				testFunctionName = args.functionName;
-			} else {
-				for (let func of testFunctions) {
-					let selection = editor.selection;
-					if (selection && func.location.range.contains(selection.start)) {
-						testFunctionName = func.name;
-						break;
-					}
-				};
-			}
-
-			if (!testFunctionName) {
-				vscode.window.showInformationMessage('No test function found at cursor.');
-				return;
-			}
-
-			const testConfig = {
-				goConfig: goConfig,
-				dir: path.dirname(editor.document.fileName),
-				flags: testFlags,
-				functions: [testFunctionName],
-				isBenchmark: isBenchmark,
-				showTestCoverage: true
-			};
-
-			// Remember this config as the last executed test.
-			lastTestConfig = testConfig;
-
-			return goTest(testConfig);
-		});
-	}).then(success => {
-		if (success && tmpCoverPath) {
-			return getCoverage(tmpCoverPath);
-		}
-	}, err => {
-		console.error(err);
-	});
-}
 
 export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
 	let editor = vscode.window.activeTextEditor;
@@ -108,23 +35,23 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 
 	editor.document.save().then(() => {
 		return getFunctions(editor.document, null).then(testFunctions => {
-			let testFunctionName: string;
+			let testFunction: vscode.SymbolInformation;
 
-			// We use functionName if it was provided as argument
+			// We use symbol if it was provided as argument
 			// Otherwise find any test function containing the cursor.
-			if (args && args.functionName) {
-				testFunctionName = args.functionName;
+			if (args && args.symbol) {
+				testFunction = args.symbol;
 			} else {
 				for (let func of testFunctions) {
 					let selection = editor.selection;
 					if (selection && func.location.range.contains(selection.start)) {
-						testFunctionName = func.name;
+						testFunction = func;
 						break;
 					}
 				};
 			}
 
-			if (!testFunctionName) {
+			if (!testFunction) {
 				vscode.window.showInformationMessage('No test function found at cursor.');
 				return;
 			}
@@ -133,7 +60,7 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
 				flags: testFlags,
-				functions: [testFunctionName],
+				functions: [testFunction],
 				isBenchmark: isBenchmark,
 				showTestCoverage: true
 			};
@@ -184,114 +111,6 @@ export function clearAutorunTest() {
 
 export function currentAutorunTestConfig(): TestConfig {
 	return autorunTestConfig;
-}
-
-/**
- * Runs all tests in the package of the source of the active editor.
- *
- * @param goConfig Configuration for the Go extension.
- */
-export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args: any) {
-	let editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		vscode.window.showInformationMessage('No editor is active.');
-		return;
-	}
-
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
-
-	const testConfig = {
-		goConfig: goConfig,
-		dir: path.dirname(editor.document.fileName),
-		flags: testFlags,
-		showTestCoverage: true
-	};
-	// Remember this config as the last executed test.
-	lastTestConfig = testConfig;
-
-	goTest(testConfig).then(success => {
-		if (success && tmpCoverPath) {
-			return getCoverage(tmpCoverPath);
-		}
-	}, err => {
-		console.log(err);
-	});
-}
-
-/**
- * Runs all tests from all directories in the workspace.
- *
- * @param goConfig Configuration for the Go extension.
- */
-export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any) {
-	let dir = vscode.workspace.rootPath;
-	if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-		dir = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
-	}
-	if (!dir) {
-		vscode.window.showInformationMessage('No workspace is open to run tests.');
-		return;
-	}
-	const testConfig = {
-		goConfig: goConfig,
-		dir: dir,
-		flags: getTestFlags(goConfig, args),
-		includeSubDirectories: true
-	};
-	// Remember this config as the last executed test.
-	lastTestConfig = testConfig;
-
-	goTest(testConfig).then(null, err => {
-		console.error(err);
-	});
-}
-
-/**
- * Runs all tests in the source of the active editor.
- *
- * @param goConfig Configuration for the Go extension.
- */
-export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: string[]): Thenable<boolean> {
-	let editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		vscode.window.showInformationMessage('No editor is active.');
-		return;
-	}
-	if (!editor.document.fileName.endsWith('_test.go')) {
-		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
-		return;
-	}
-
-	return editor.document.save().then(() => {
-		return getTestFunctions(editor.document, null).then(testFunctions => {
-			const testConfig = {
-				goConfig: goConfig,
-				dir: path.dirname(editor.document.fileName),
-				flags: getTestFlags(goConfig, args),
-				functions: testFunctions.map(func => { return func.name; })
-			};
-			// Remember this config as the last executed test.
-			lastTestConfig = testConfig;
-
-			return goTest(testConfig);
-		});
-	}).then(null, err => {
-		console.error(err);
-		return Promise.resolve(false);
-	});
-}
-
-/**
- * Runs the previously executed test.
- */
-export function testPrevious() {
-	if (!lastTestConfig) {
-		vscode.window.showInformationMessage('No test has been recently executed.');
-		return;
-	}
-	goTest(lastTestConfig).then(null, err => {
-		console.error(err);
-	});
 }
 
 /**
