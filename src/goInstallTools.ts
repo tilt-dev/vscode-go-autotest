@@ -13,7 +13,6 @@ import { showGoStatus, hideGoStatus } from './goStatus';
 import { getGoRuntimePath } from './goPath';
 import { outputChannel } from './goStatus';
 import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
-import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
 let installsDeclinedTools: string[] = [];
@@ -76,10 +75,6 @@ function getTools(goVersion: SemVersion): string[] {
 		'impl',
 		'fillstruct'
 	];
-
-	if (goLiveErrorsEnabled()) {
-		tools.push('gotype-live');
-	}
 
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {

@@ -1,45 +1,12 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, getWorkspaceFolderPath, getCurrentGoPath } from './util';
 import { outputChannel } from './goStatus';
 import os = require('os');
 import { getNonVendorPackages } from './goPackages';
 import { getTestFlags } from './testUtils';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { diagnosticsStatusBarItem } from './goStatus';
-/**
- * Builds current package or workspace.
- */
-export function buildCode(buildWorkspace?: boolean) {
-	let editor = vscode.window.activeTextEditor;
-	if (!buildWorkspace) {
-		if (!editor) {
-			vscode.window.showInformationMessage('No editor is active, cannot find current package to build');
-			return;
-		}
-		if (editor.document.languageId !== 'go') {
-			vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to build');
-			return;
-		}
-	}
-
-	let documentUri = editor ? editor.document.uri : null;
-	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
-
-	outputChannel.clear(); // Ensures stale output from build on save is cleared
-	diagnosticsStatusBarItem.show();
-	diagnosticsStatusBarItem.text = 'Building...';
-
-	goBuild(documentUri, goConfig, buildWorkspace)
-		.then(errors => {
-			handleDiagnosticErrors(editor ? editor.document : null, errors, vscode.DiagnosticSeverity.Error);
-			diagnosticsStatusBarItem.hide();
-		})
-		.catch(err => {
-			vscode.window.showInformationMessage('Error: ' + err);
-			diagnosticsStatusBarItem.text = 'Build Failed';
-		});
-}
 
 /**
  * Runs go build -i or go test -i and presents the output in the 'Go' channel and in the diagnostic collections.
