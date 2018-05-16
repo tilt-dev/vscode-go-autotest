@@ -88,8 +88,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 	});
 
+  // Only watch Go files. The vscode filesystem watcher does
+  // not support more complex matching patterns, otherwise we'd use
+  // a narrower filter that skipped gitignore files.
 	let watcher = vscode.workspace.createFileSystemWatcher(
-		path.join(vscode.workspace.rootPath, '**', '*')
+		path.join(vscode.workspace.rootPath, '**', '*.go')
 	);
 
 	let onChange = _.debounce(runAutorunTest, 200);
