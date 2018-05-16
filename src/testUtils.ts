@@ -12,7 +12,7 @@ import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, get
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
-let outputChannel = vscode.window.createOutputChannel('Go Tests');
+let defaultOutputChannel = vscode.window.createOutputChannel('Go Tests');
 
 /**
  * Input to goTest.
@@ -46,6 +46,15 @@ export interface TestConfig {
 	 * Whether this is a benchmark.
 	 */
 	isBenchmark?: boolean;
+	/**
+	 * An output channel to print to. We will use the default Go Tests output channel if none is provided.
+	 */
+	output?: vscode.OutputChannel;
+	/**
+	 * TODO(nick): This is an extra property we hang on this object for consumption outside
+	 * this file. It's kind of janky but fine for a demo.
+	 */
+	coverPath?: string;
 }
 
 export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
@@ -115,6 +124,7 @@ export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.Ca
  * @param goConfig Configuration for the Go extension.
  */
 export function goTest(testconfig: TestConfig): Thenable<boolean> {
+	let outputChannel = testconfig.output || defaultOutputChannel;
 	return new Promise<boolean>((resolve, reject) => {
 		outputChannel.clear();
 		if (!testconfig.background) {
@@ -214,13 +224,6 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			resolve(false);
 		});
 	});
-}
-
-/**
- * Reveals the output channel in the UI.
- */
-export function showTestOutput() {
-	outputChannel.show(true);
 }
 
 function expandFilePathInOutput(output: string, cwd: string): string {
