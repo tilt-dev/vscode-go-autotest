@@ -16,15 +16,16 @@ import { testDiagnosticCollection } from './diags';
 let autorunTestConfig: TestConfig;
 let autorunTestStart: number;
 
-export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
+// Returns a promise that completes when the configuration is set.
+export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any): Thenable<any> {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
-		return;
+		return Promise.resolve(true);
 	}
 	if (!editor.document.fileName.endsWith('_test.go')) {
 		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
-		return;
+		return Promise.resolve(true);
 	}
 
 	clearAutorunTest();
@@ -34,7 +35,7 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 
 	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
 
-	editor.document.save().then(() => {
+	return editor.document.save().then(() => {
 		return getFunctions(editor.document, null);
 	}).then(testFunctions => {
 		let testFunction: vscode.SymbolInformation;
@@ -72,9 +73,16 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 
 		// Remember this config as the autorun test
 		autorunTestConfig = testConfig;
-		updateAutorunStatus();
 
-		return runAutorunTest();
+		// add some ui for the currently running test
+		updateAutorunStatus();
+		setAutorunDiagnostic('WAITING: ' + testFunction.name, vscode.DiagnosticSeverity.Information);
+
+		// focus the problems pane so that we see the new testConfig
+		vscode.commands.executeCommand('workbench.action.problems.focus');
+
+		// fire and forget the test
+		runAutorunTest();
 	});
 }
 
@@ -82,10 +90,30 @@ let autorunStatus: vscode.StatusBarItem = vscode.window.createStatusBarItem(vsco
 function updateAutorunStatus() {
 	if (autorunTestConfig) {
 		autorunStatus.text = 'Autorun: ' + autorunTestConfig.functions[0].name;
+		autorunStatus.command = 'go.test.showAutorunTest';
 		autorunStatus.show();
 	} else {
 		autorunStatus.hide();
 	}
+}
+
+function setAutorunDiagnostic(message: string, severity: vscode.DiagnosticSeverity) {
+	if (!autorunTestConfig) {
+		return;
+	}
+	let testFunction = autorunTestConfig.functions[0];
+
+	// Send diagnostic information about the test to the problems panel.
+	let uri = testFunction.location.uri;
+	testDiagnosticCollection.delete(uri);
+
+	// Only highlight the first line of the function.
+	let range = new vscode.Range(
+		testFunction.location.range.start,
+		new vscode.Position(testFunction.location.range.start.line, 1000));
+	let d = new vscode.Diagnostic(range, message, severity);
+	d.source = 'pinned';
+	testDiagnosticCollection.set(uri, [d]);
 }
 
 export function runAutorunTest() {
@@ -94,23 +122,10 @@ export function runAutorunTest() {
 	}
 	return goTest(autorunTestConfig).then((success) => {
 		let testFunction = autorunTestConfig.functions[0];
-
-		// Send diagnostic information about the test to the problems panel.
-		let uri = testFunction.location.uri;
-		testDiagnosticCollection.delete(uri);
-
-		// Only highlight the first line of the function.
-		let range = new vscode.Range(
-			testFunction.location.range.start,
-			new vscode.Position(testFunction.location.range.start.line, 1000));
 		if (success) {
-			testDiagnosticCollection.set(uri, [
-				new vscode.Diagnostic(range, 'SUCCESS: ' + testFunction.name, vscode.DiagnosticSeverity.Information)
-			]);
+			setAutorunDiagnostic('SUCCESS: ' + testFunction.name, vscode.DiagnosticSeverity.Information);
 		} else {
-			testDiagnosticCollection.set(uri, [
-				new vscode.Diagnostic(range, 'FAILED: ' + testFunction.name, vscode.DiagnosticSeverity.Error)
-			]);
+			setAutorunDiagnostic('FAILED: ' + testFunction.name, vscode.DiagnosticSeverity.Error);
 		}
 
 		let coverPath = autorunTestConfig.coverPath;
@@ -122,16 +137,27 @@ export function runAutorunTest() {
 	});
 }
 
-export function clearAutorunTest() {
-	if (autorunTestConfig) {
-		let timeTaken = Date.now() - autorunTestStart;
-		sendTelemetryEvent('autorunTest-clear', {}, { timeTaken });
-		autorunTestStart = 0;
-		autorunTestConfig.output.dispose();
-		autorunTestConfig = null;
-		updateAutorunStatus();
-		testDiagnosticCollection.clear();
+export function showAutorunTest(args) {
+	if (!autorunTestConfig) {
+		return;
 	}
+
+	sendTelemetryEvent('autorunTest-show', {}, {});
+	autorunTestConfig.output.show(true);
+}
+
+export function clearAutorunTest() {
+	if (!autorunTestConfig) {
+		return;
+	}
+
+	let timeTaken = Date.now() - autorunTestStart;
+	sendTelemetryEvent('autorunTest-clear', {}, { timeTaken });
+	autorunTestStart = 0;
+	autorunTestConfig.output.dispose();
+	autorunTestConfig = null;
+	updateAutorunStatus();
+	testDiagnosticCollection.clear();
 }
 
 export function currentAutorunTestConfig(): TestConfig {

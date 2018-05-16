@@ -75,22 +75,24 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 			testFunctions.forEach(func => {
 
 				let autorun = currentAutorunTestConfig();
-				let autorunTestCmd: Command;
 				if (autorun && autorun.functions &&
 					autorun.functions.findIndex((f: vscode.SymbolInformation) => f.name === func.name) !== -1) {
-					autorunTestCmd = {
-						title: 'clear autorun',
-						command: 'go.test.clearAutorunTest'
-					};
-				} else {
-					autorunTestCmd = {
-						title: 'autorun test',
-						command: 'go.test.autoRunTest',
-						arguments: [{ symbol: func }]
-					};
-				}
 
-				codelens.push(new CodeLens(func.location.range, autorunTestCmd));
+					codelens.push(new CodeLens(func.location.range, {
+						title: 'remove pin',
+						command: 'go.test.clearAutorunTest'
+					}));
+					codelens.push(new CodeLens(func.location.range, {
+						title: 'show output',
+						command: 'go.test.showAutorunTest'
+					}));
+				} else {
+					codelens.push(new CodeLens(func.location.range, {
+						title: 'pin test',
+						command: 'go.test.autorunTest',
+						arguments: [{ symbol: func }]
+					}));
+				}
 			});
 		});
 

@@ -23,7 +23,7 @@ import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTo
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { initGoCover } from './goCover';
-import { setAutorunAtCursor, runAutorunTest, clearAutorunTest } from './goTest';
+import { setAutorunAtCursor, runAutorunTest, clearAutorunTest, showAutorunTest } from './goTest';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { getAllPackages } from './goPackages';
@@ -48,13 +48,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	let testCodeLensProvider = new GoRunTestCodeLensProvider();
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));
-
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.autoRunTest', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-		let isBenchmark = false;
-		setAutorunAtCursor(goConfig, isBenchmark, args);
-		testCodeLensProvider.rerenderCodeLenses();
-	}));
 
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
 		let updatedGoConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
@@ -88,10 +81,20 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	watcher.onDidDelete(onChange);
 
 	ctx.subscriptions.push(watcher);
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.autorunTest', (args) => {
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		setAutorunAtCursor(goConfig, false, args).then(() => {
+		  testCodeLensProvider.rerenderCodeLenses();
+		});
+	}));
+
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.clearAutorunTest', () => {
 		clearAutorunTest();
 		testCodeLensProvider.rerenderCodeLenses();
 	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.showAutorunTest', showAutorunTest));
 }
 
 export function deactivate() {
