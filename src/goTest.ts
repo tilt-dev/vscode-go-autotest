@@ -11,6 +11,7 @@ import os = require('os');
 import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
 import { getCoverage } from './goCover';
 import { sendTelemetryEvent } from './util';
+import { testDiagnosticCollection } from './diags';
 
 let autorunTestConfig: TestConfig;
 let autorunTestStart: number;
@@ -34,56 +35,53 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
 
 	editor.document.save().then(() => {
-		return getFunctions(editor.document, null).then(testFunctions => {
-			let testFunction: vscode.SymbolInformation;
+		return getFunctions(editor.document, null);
+	}).then(testFunctions => {
+		let testFunction: vscode.SymbolInformation;
 
-			// We use symbol if it was provided as argument
-			// Otherwise find any test function containing the cursor.
-			if (args && args.symbol) {
-				testFunction = args.symbol;
-			} else {
-				for (let func of testFunctions) {
-					let selection = editor.selection;
-					if (selection && func.location.range.contains(selection.start)) {
-						testFunction = func;
-						break;
-					}
-				};
-			}
-
-			if (!testFunction) {
-				vscode.window.showInformationMessage('No test function found at cursor.');
-				return;
-			}
-
-			const testConfig = {
-				goConfig: goConfig,
-				dir: path.dirname(editor.document.fileName),
-				flags: testFlags,
-				functions: [testFunction],
-				isBenchmark: isBenchmark,
-				showTestCoverage: true
+		// We use symbol if it was provided as argument
+		// Otherwise find any test function containing the cursor.
+		if (args && args.symbol) {
+			testFunction = args.symbol;
+		} else {
+			for (let func of testFunctions) {
+				let selection = editor.selection;
+				if (selection && func.location.range.contains(selection.start)) {
+					testFunction = func;
+					break;
+				}
 			};
-
-			// Remember this config as the autorun test
-			autorunTestConfig = testConfig;
-			updateAutorunStatus();
-
-			return goTest(testConfig);
-		});
-	}).then(success => {
-		if (success && tmpCoverPath) {
-			return getCoverage(tmpCoverPath);
 		}
-	}, err => {
-		console.error(err);
+
+		if (!testFunction) {
+			vscode.window.showInformationMessage('No test function found at cursor.');
+			return;
+		}
+
+		const testConfig = {
+			goConfig: goConfig,
+			dir: path.dirname(editor.document.fileName),
+			flags: testFlags,
+			coverPath: tmpCoverPath,
+			functions: [testFunction],
+			isBenchmark: isBenchmark,
+			showTestCoverage: true,
+			background: true,
+			output: vscode.window.createOutputChannel('Go Test ' + testFunction.name),
+		};
+
+		// Remember this config as the autorun test
+		autorunTestConfig = testConfig;
+		updateAutorunStatus();
+
+		return runAutorunTest();
 	});
 }
 
 let autorunStatus: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
 function updateAutorunStatus() {
 	if (autorunTestConfig) {
-		autorunStatus.text = 'Autorun: ' + autorunTestConfig.functions[0];
+		autorunStatus.text = 'Autorun: ' + autorunTestConfig.functions[0].name;
 		autorunStatus.show();
 	} else {
 		autorunStatus.hide();
@@ -94,7 +92,32 @@ export function runAutorunTest() {
 	if (!autorunTestConfig) {
 		return;
 	}
-	goTest(autorunTestConfig).then(null, err => {
+	return goTest(autorunTestConfig).then((success) => {
+		let testFunction = autorunTestConfig.functions[0];
+
+		// Send diagnostic information about the test to the problems panel.
+		let uri = testFunction.location.uri;
+		testDiagnosticCollection.delete(uri);
+
+		// Only highlight the first line of the function.
+		let range = new vscode.Range(
+			testFunction.location.range.start,
+			new vscode.Position(testFunction.location.range.start.line, 1000));
+		if (success) {
+			testDiagnosticCollection.set(uri, [
+				new vscode.Diagnostic(range, 'SUCCESS: ' + testFunction.name, vscode.DiagnosticSeverity.Information)
+			]);
+		} else {
+			testDiagnosticCollection.set(uri, [
+				new vscode.Diagnostic(range, 'FAILED: ' + testFunction.name, vscode.DiagnosticSeverity.Error)
+			]);
+		}
+
+		let coverPath = autorunTestConfig.coverPath;
+		if (success && coverPath) {
+			return getCoverage(coverPath);
+		}
+	}).then(null, err => {
 		console.error(err);
 	});
 }
@@ -104,8 +127,10 @@ export function clearAutorunTest() {
 		let timeTaken = Date.now() - autorunTestStart;
 		sendTelemetryEvent('autorunTest-clear', {}, { timeTaken });
 		autorunTestStart = 0;
+		autorunTestConfig.output.dispose();
 		autorunTestConfig = null;
 		updateAutorunStatus();
+		testDiagnosticCollection.clear();
 	}
 }
 

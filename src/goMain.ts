@@ -22,10 +22,8 @@ import { GoCodeActionProvider } from './goCodeAction';
 import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
-import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { initGoCover } from './goCover';
 import { setAutorunAtCursor, runAutorunTest, clearAutorunTest } from './goTest';
-import { showTestOutput } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { getAllPackages } from './goPackages';
@@ -42,9 +40,11 @@ import { goGetPackage } from './goGetPackage';
 import { GoDebugConfigurationProvider } from './goDebugConfiguration';
 import { playgroundCommand } from './goPlayground';
 import { installCurrentPackage } from './goInstall';
+import { initDiagnosticCollection } from './diags';
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	initGoCover(ctx);
+	initDiagnosticCollection(ctx);
 
 	let testCodeLensProvider = new GoRunTestCodeLensProvider();
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));

@@ -8,7 +8,7 @@ import vscode = require('vscode');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { showTestOutput, goTest } from './testUtils';
+import { goTest } from './testUtils';
 import rl = require('readline');
 
 export let coveredGutter;
@@ -66,46 +66,6 @@ export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
 			delete coverageFiles[filename];
 		}
 	}
-}
-
-export function toggleCoverageCurrentPackage() {
-	let editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		vscode.window.showInformationMessage('No editor is active.');
-		return;
-	}
-
-	// If current file has highlights, then remove coverage, else add coverage
-	for (let filename in coverageFiles) {
-		let found = editor.document.uri.fsPath.endsWith(filename);
-		// Check for file again if outside the $GOPATH.
-		if (!found && filename.startsWith('_')) {
-			found = editor.document.uri.fsPath.endsWith(filename.slice(1));
-		}
-		if (found) {
-			clearCoverage();
-			return;
-		}
-	}
-
-	let goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
-	let cwd = path.dirname(editor.document.uri.fsPath);
-
-	let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
-	let tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
-	let args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
-	return goTest({
-		goConfig: goConfig,
-		dir: cwd,
-		flags: args,
-		background: true
-	}).then(success => {
-		if (!success) {
-			showTestOutput();
-			return [];
-		}
-		return getCoverage(tmpCoverPath, true);
-	});
 }
 
 export function getCodeCoverage(editor: vscode.TextEditor) {
