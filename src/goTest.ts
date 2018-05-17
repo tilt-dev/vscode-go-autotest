@@ -166,7 +166,7 @@ export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration,
 	}
 
 	// Don't do this if a test is already pinned.
-	if (!autorunTestConfig) {
+	if (autorunTestConfig) {
 		return;
 	}
 
