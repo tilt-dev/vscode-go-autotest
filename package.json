@@ -76,13 +76,18 @@
     "commands": [
       {
         "command": "go.test.autorunTest",
-        "title": "Go: Set Test to Autorun At Cursor",
-        "description": "Sets a test to autorun at the cursor."
+        "title": "Go: Pin Test",
+        "description": "Pins a test to autorun on every save"
       },
       {
         "command": "go.test.clearAutorunTest",
-        "title": "Go: Clear Autorun",
-        "description": "Clears current autorun test"
+        "title": "Go: Clear Pinned Test",
+        "description": "Clear the pinned test"
+      },
+      {
+        "command": "go.test.showAutorunTest",
+        "title": "Go: Show Pinned Test",
+        "description": "Show the current output of the pinned test"
       }
     ],
     "configuration": {},
