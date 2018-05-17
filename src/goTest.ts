@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
+import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, goTestSilent } from './testUtils';
 import { sendTelemetryEvent } from './util';
 import { testDiagnosticCollection } from './diags';
 
@@ -157,3 +157,26 @@ export function currentAutorunTestConfig(): TestConfig {
 	return autorunTestConfig;
 }
 
+export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration, args: string[]): Thenable<boolean> {
+	let editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		return;
+	}
+	if (!editor.document.fileName.endsWith('_test.go')) {
+		return;
+	}
+
+	return getTestFunctions(editor.document, null).then(testFunctions => {
+		const testConfig = {
+			goConfig: goConfig,
+			dir: path.dirname(editor.document.fileName),
+			flags: getTestFlags(goConfig, args),
+			functions: testFunctions,
+		};
+
+		return goTestSilent(testConfig);
+	}).then(null, err => {
+		console.error(err);
+		return Promise.resolve(false);
+	});
+}
