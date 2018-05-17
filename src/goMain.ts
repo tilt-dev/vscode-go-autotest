@@ -20,7 +20,7 @@ import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, disposeTelemetryReporter, getToolsEnvVars } from './util';
 import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { implCursor } from './goImpl';
-import { initDiagnosticCollection } from './diags';
+import { initDiagnosticCollection, autotestDisplay } from './diags';
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	initDiagnosticCollection(ctx);
@@ -54,7 +54,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		path.join(vscode.workspace.rootPath, '**', '*.go')
 	);
 
-	let onChange = _.debounce(runAutorunTest, 200);
+	let onChange = _.debounce(() => {
+		// clear the autotest errors after a change.
+		autotestDisplay.clear();
+		runAutorunTest();
+	}, 200);
 	watcher.onDidChange(onChange);
 	watcher.onDidCreate(onChange);
 	watcher.onDidDelete(onChange);
