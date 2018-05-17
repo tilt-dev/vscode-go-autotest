@@ -50,11 +50,6 @@ export interface TestConfig {
 	 * An output channel to print to. We will use the default Go Tests output channel if none is provided.
 	 */
 	output?: vscode.OutputChannel;
-	/**
-	 * TODO(nick): This is an extra property we hang on this object for consumption outside
-	 * this file. It's kind of janky but fine for a demo.
-	 */
-	coverPath?: string;
 }
 
 export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
