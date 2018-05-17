@@ -52,6 +52,21 @@ export interface TestConfig {
 	output?: vscode.OutputChannel;
 }
 
+export interface TestSet {
+	[key: string]: boolean;
+}
+
+export interface TestResult {
+	/**
+	 * Whether the test command as a whole succeeded or failed.
+	 */
+	success: boolean;
+	/**
+	 * Test cases indexed by name. True for success, false for error.
+	 */
+	tests: TestSet;
+}
+
 export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 	const envVars = getToolsEnvVars();
 	const testEnvConfig = config['testEnvVars'] || {};
@@ -118,9 +133,13 @@ export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.Ca
  *
  * @param goConfig Configuration for the Go extension.
  */
-export function goTest(testconfig: TestConfig): Thenable<boolean> {
+export function goTest(testconfig: TestConfig): Thenable<TestResult> {
 	let outputChannel = testconfig.output || defaultOutputChannel;
-	return new Promise<boolean>((resolve, reject) => {
+	return new Promise<TestResult>((resolve, reject) => {
+		let result: TestResult = {
+			success: false,
+			tests: {}
+		};
 		outputChannel.clear();
 		if (!testconfig.background) {
 
@@ -145,7 +164,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 		if (!goRuntimePath) {
 			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-			return Promise.resolve();
+			return resolve(result);
 		}
 
 		// Append the package name to args to enable running tests in symlinked directories
@@ -170,14 +189,21 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			const outBuf = new LineBuffer();
 			const errBuf = new LineBuffer();
 
+			const testResultLineRE = /^[ \t\-]+(ok|FAIL)[ \t\:]+([^ ]+) /; // 1=ok/FAIL, 2=testname
 			const packageResultLineRE = /^(ok|FAIL)[ \t]+(.+?)[ \t]+([0-9\.]+s|\(cached\))/; // 1=ok/FAIL, 2=package, 3=time/(cached)
 			const testResultLines: string[] = [];
 
 			const processTestResultLine = (line: string) => {
 				testResultLines.push(line);
-				const result = line.match(packageResultLineRE);
-				if (result && currentGoWorkspace) {
-					const packageNameArr = result[2].split('/');
+
+				const testResult = line.match(testResultLineRE);
+				if (testResult) {
+					result.tests[testResult[2]] = testResult[1] === 'ok';
+				}
+
+				const packageResult = line.match(packageResultLineRE);
+				if (packageResult && currentGoWorkspace) {
+					const packageNameArr = packageResult[2].split('/');
 					const baseDir = path.join(currentGoWorkspace, ...packageNameArr);
 					testResultLines.forEach(line => outputChannel.appendLine(expandFilePathInOutput(line, baseDir)));
 					testResultLines.splice(0);
@@ -211,12 +237,20 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				} else {
 					outputChannel.appendLine(`Success: ${testType} passed.`);
 				}
-				resolve(code === 0);
+				result.success = code === 0;
+				if (result.success && testconfig.functions) {
+					// In the success case, the Go tool does not give any output.
+					// Populate the testCases manually.
+					for (let fn of testconfig.functions) {
+						result.tests[fn.name] = true;
+					}
+				}
+				resolve(result);
 			});
 		}, err => {
 			outputChannel.appendLine(`Error: ${testType} failed.`);
 			outputChannel.appendLine(err);
-			resolve(false);
+			resolve(result);
 		});
 	});
 }

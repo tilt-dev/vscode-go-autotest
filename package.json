@@ -8,8 +8,7 @@
   },
   "icon": "images/goIcon.png",
   "categories": [
-      "Programming Languages",
-      "Testing"
+      "Programming Languages"
   ],
   "galleryBanner": {
     "color": "#CFB69A",
