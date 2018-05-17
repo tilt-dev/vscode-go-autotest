@@ -166,17 +166,15 @@ export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration,
 		return;
 	}
 
-	return editor.document.save().then(() => {
-		return getTestFunctions(editor.document, null).then(testFunctions => {
-			const testConfig = {
-				goConfig: goConfig,
-				dir: path.dirname(editor.document.fileName),
-				flags: getTestFlags(goConfig, args),
-				functions: testFunctions,
-			};
+	return getTestFunctions(editor.document, null).then(testFunctions => {
+		const testConfig = {
+			goConfig: goConfig,
+			dir: path.dirname(editor.document.fileName),
+			flags: getTestFlags(goConfig, args),
+			functions: testFunctions,
+		};
 
-			return goTestSilent(testConfig);
-		});
+		return goTestSilent(testConfig);
 	}).then(null, err => {
 		console.error(err);
 		return Promise.resolve(false);
