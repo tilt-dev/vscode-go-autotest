@@ -17,10 +17,8 @@ import { showHideStatus } from './goStatus';
 import { setAutorunAtCursor, runAutorunTest, clearAutorunTest, showAutorunTest } from './goTest';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, disposeTelemetryReporter, getToolsEnvVars } from './util';
-import { LanguageClient, RevealOutputChannelOn } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { implCursor } from './goImpl';
-import { installCurrentPackage } from './goInstall';
 import { initDiagnosticCollection } from './diags';
 
 export function activate(ctx: vscode.ExtensionContext): void {
