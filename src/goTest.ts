@@ -8,9 +8,10 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, goTestSilent } from './testUtils';
+import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions  } from './testUtils';
 import { sendTelemetryEvent } from './util';
 import { testDiagnosticCollection } from './diags';
+import { outputChannel } from './goStatus';
 
 let autorunTestConfig: TestConfig;
 let autorunTestStart: number;
@@ -74,7 +75,7 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 
 		// add some ui for the currently running test
 		updateAutorunStatus();
-		setAutorunDiagnostic(testFunction, 'WAITING: ' + testFunction.name, vscode.DiagnosticSeverity.Information);
+		setAutorunDiagnostic(testFunction, 'WAITING: ' + testFunction.name, vscode.DiagnosticSeverity.Information, 'pinned');
 
 		// focus the problems pane so that we see the new testConfig
 		vscode.commands.executeCommand('workbench.action.problems.focus');
@@ -95,7 +96,7 @@ function updateAutorunStatus() {
 	}
 }
 
-function setAutorunDiagnostic(fn: vscode.SymbolInformation, message: string, severity: vscode.DiagnosticSeverity) {
+function setAutorunDiagnostic(fn: vscode.SymbolInformation, message: string, severity: vscode.DiagnosticSeverity, source: string) {
 	// Send diagnostic information about the test to the problems panel.
 	let uri = fn.location.uri;
 	testDiagnosticCollection.delete(uri);
@@ -105,7 +106,7 @@ function setAutorunDiagnostic(fn: vscode.SymbolInformation, message: string, sev
 		fn.location.range.start,
 		new vscode.Position(fn.location.range.start.line, 1000));
 	let d = new vscode.Diagnostic(range, message, severity);
-	d.source = 'pinned';
+	d.source = source;
 	testDiagnosticCollection.set(uri, [d]);
 }
 
@@ -116,11 +117,11 @@ export function runAutorunTest() {
 	return goTest(autorunTestConfig).then((result) => {
 		for (let fn of autorunTestConfig.functions) {
 			if (!(fn.name in result.tests)) {
-				setAutorunDiagnostic(fn, 'unknown: ' + fn.name, vscode.DiagnosticSeverity.Information);
+				setAutorunDiagnostic(fn, 'unknown: ' + fn.name, vscode.DiagnosticSeverity.Information, 'pinned');
 			} else if (result.tests[fn.name]) {
-				setAutorunDiagnostic(fn, 'SUCCESS: ' + fn.name, vscode.DiagnosticSeverity.Information);
+				setAutorunDiagnostic(fn, 'SUCCESS: ' + fn.name, vscode.DiagnosticSeverity.Information, 'pinned');
 			} else {
-				setAutorunDiagnostic(fn, 'FAILED: ' + fn.name, vscode.DiagnosticSeverity.Error);
+				setAutorunDiagnostic(fn, 'FAILED: ' + fn.name, vscode.DiagnosticSeverity.Error, 'pinned');
 			}
 		}
 	}).then(null, err => {
@@ -155,7 +156,7 @@ export function currentAutorunTestConfig(): TestConfig {
 	return autorunTestConfig;
 }
 
-export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration, args: string[]): Thenable<boolean> {
+export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration, args: string[]): Thenable<void> {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		return;
@@ -164,16 +165,34 @@ export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration,
 		return;
 	}
 
+	// Don't do this if a test is already pinned.
+	if (!autorunTestConfig) {
+		return;
+	}
+
+	let output = vscode.window.createOutputChannel('Go Test ' + editor.document.fileName);
+
 	return getTestFunctions(editor.document, null).then(testFunctions => {
 		const testConfig = {
 			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
 			flags: getTestFlags(goConfig, args),
 			functions: testFunctions,
+			background: true,
+			output: output,
 		};
-
-		return goTestSilent(testConfig);
-	}).then(null, err => {
+		return Promise.all([goTest(testConfig), testFunctions]);
+	}).then((resultArray) => {
+		let [result, testFunctions] = resultArray;
+		for (let fn of testFunctions) {
+			if (result.tests[fn.name] === false) {
+				setAutorunDiagnostic(fn, 'FAILED: ' + fn.name, vscode.DiagnosticSeverity.Error, 'wm-autorun');
+			}
+		}
+	}).then(() => {
+		output.dispose();
+	}, (err) => {
+		output.dispose();
 		console.error(err);
 		return Promise.resolve(false);
 	});
