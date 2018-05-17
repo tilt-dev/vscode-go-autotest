@@ -10,7 +10,7 @@ import vscode = require('vscode');
 import os = require('os');
 import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions  } from './testUtils';
 import { sendTelemetryEvent } from './util';
-import { testDiagnosticCollection } from './diags';
+import { pinDisplay, autotestDisplay } from './diags';
 import { outputChannel } from './goStatus';
 
 let autorunTestConfig: TestConfig;
@@ -75,7 +75,7 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 
 		// add some ui for the currently running test
 		updateAutorunStatus();
-		setAutorunDiagnostic(testFunction, 'WAITING: ' + testFunction.name, vscode.DiagnosticSeverity.Information, 'pinned');
+		pinDisplay.displayWaiting(testFunction);
 
 		// focus the problems pane so that we see the new testConfig
 		vscode.commands.executeCommand('workbench.action.problems.focus');
@@ -96,32 +96,20 @@ function updateAutorunStatus() {
 	}
 }
 
-function setAutorunDiagnostic(fn: vscode.SymbolInformation, message: string, severity: vscode.DiagnosticSeverity, source: string) {
-	// Send diagnostic information about the test to the problems panel.
-	let uri = fn.location.uri;
-	testDiagnosticCollection.delete(uri);
-
-	// Only highlight the first line of the function.
-	let range = new vscode.Range(
-		fn.location.range.start,
-		new vscode.Position(fn.location.range.start.line, 1000));
-	let d = new vscode.Diagnostic(range, message, severity);
-	d.source = source;
-	testDiagnosticCollection.set(uri, [d]);
-}
-
 export function runAutorunTest() {
 	if (!autorunTestConfig) {
 		return;
 	}
 	return goTest(autorunTestConfig).then((result) => {
+		pinDisplay.clear();
+
 		for (let fn of autorunTestConfig.functions) {
 			if (!(fn.name in result.tests)) {
-				setAutorunDiagnostic(fn, 'unknown: ' + fn.name, vscode.DiagnosticSeverity.Information, 'pinned');
+				pinDisplay.displayUnknown(fn);
 			} else if (result.tests[fn.name]) {
-				setAutorunDiagnostic(fn, 'SUCCESS: ' + fn.name, vscode.DiagnosticSeverity.Information, 'pinned');
+				pinDisplay.displaySuccess(fn);
 			} else {
-				setAutorunDiagnostic(fn, 'FAILED: ' + fn.name, vscode.DiagnosticSeverity.Error, 'pinned');
+				pinDisplay.displayFailure(fn);
 			}
 		}
 	}).then(null, err => {
@@ -149,7 +137,7 @@ export function clearAutorunTest() {
 	autorunTestConfig.output.dispose();
 	autorunTestConfig = null;
 	updateAutorunStatus();
-	testDiagnosticCollection.clear();
+	pinDisplay.clear();
 }
 
 export function currentAutorunTestConfig(): TestConfig {
@@ -183,10 +171,12 @@ export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration,
 		};
 		return Promise.all([goTest(testConfig), testFunctions]);
 	}).then((resultArray) => {
+		autotestDisplay.clear();
+
 		let [result, testFunctions] = resultArray;
 		for (let fn of testFunctions) {
 			if (result.tests[fn.name] === false) {
-				setAutorunDiagnostic(fn, 'FAILED: ' + fn.name, vscode.DiagnosticSeverity.Error, 'wm-autorun');
+				autotestDisplay.displayFailure(fn);
 			}
 		}
 	}).then(() => {
