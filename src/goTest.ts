@@ -9,7 +9,6 @@ import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
 import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
-import { getCoverage } from './goCover';
 import { sendTelemetryEvent } from './util';
 import { testDiagnosticCollection } from './diags';
 
@@ -33,7 +32,7 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
+	const testFlags = getTestFlags(goConfig, args) || [];
 
 	return editor.document.save().then(() => {
 		return getFunctions(editor.document, null);
@@ -63,7 +62,6 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
 			flags: testFlags,
-			coverPath: tmpCoverPath,
 			functions: [testFunction],
 			isBenchmark: isBenchmark,
 			showTestCoverage: true,
@@ -127,11 +125,6 @@ export function runAutorunTest() {
 		} else {
 			setAutorunDiagnostic('FAILED: ' + testFunction.name, vscode.DiagnosticSeverity.Error);
 		}
-
-		let coverPath = autorunTestConfig.coverPath;
-		if (success && coverPath) {
-			return getCoverage(coverPath);
-		}
 	}).then(null, err => {
 		console.error(err);
 	});
@@ -164,18 +157,3 @@ export function currentAutorunTestConfig(): TestConfig {
 	return autorunTestConfig;
 }
 
-/**
- * Computes the tmp coverage path and needed flags.
- *
- * @param goConfig Configuration for the Go extension.
- */
-function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string, args: any): { tmpCoverPath: string, testFlags: string[] } {
-	let tmpCoverPath = '';
-	let testFlags = getTestFlags(goConfig, args) || [];
-	if (goConfig[confFlag] === true) {
-		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
-		testFlags.push('-coverprofile=' + tmpCoverPath);
-	}
-
-	return {tmpCoverPath, testFlags};
-}

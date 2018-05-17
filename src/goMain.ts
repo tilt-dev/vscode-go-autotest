@@ -8,42 +8,22 @@
 import vscode = require('vscode');
 import path = require('path');
 import _ = require('lodash');
-import { GoCompletionItemProvider } from './goSuggest';
-import { GoHoverProvider } from './goExtraInfo';
-import { GoDefinitionProvider } from './goDeclaration';
-import { GoReferenceProvider } from './goReferences';
-import { GoImplementationProvider } from './goImplementations';
-import { GoRenameProvider } from './goRename';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
-import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
-import { GoCodeActionProvider } from './goCodeAction';
 import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
-import { initGoCover } from './goCover';
 import { setAutorunAtCursor, runAutorunTest, clearAutorunTest, showAutorunTest } from './goTest';
-import * as goGenerateTests from './goGenerateTests';
-import { addImport } from './goImport';
-import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, disposeTelemetryReporter, getToolsEnvVars } from './util';
 import { LanguageClient, RevealOutputChannelOn } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
-import { addTags, removeTags } from './goModifytags';
-import { runFillStruct } from './goFillStruct';
-import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { implCursor } from './goImpl';
-import { browsePackages } from './goBrowsePackage';
-import { goGetPackage } from './goGetPackage';
-import { GoDebugConfigurationProvider } from './goDebugConfiguration';
-import { playgroundCommand } from './goPlayground';
 import { installCurrentPackage } from './goInstall';
 import { initDiagnosticCollection } from './diags';
 
 export function activate(ctx: vscode.ExtensionContext): void {
-	initGoCover(ctx);
 	initDiagnosticCollection(ctx);
 
 	let testCodeLensProvider = new GoRunTestCodeLensProvider();
@@ -113,8 +93,4 @@ function didLangServerConfigChange(useLangServer: boolean, langServerFlags: stri
 		}
 	}
 	return false;
-}
-
-function loadPackages() {
-	getAllPackages();
 }
