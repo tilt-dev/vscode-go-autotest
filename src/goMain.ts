@@ -65,19 +65,19 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(watcher);
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.autorunTest', (args) => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.pin', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		setAutorunAtCursor(goConfig, false, args).then(() => {
 		  testCodeLensProvider.rerenderCodeLenses();
 		});
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.clearAutorunTest', () => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.clear', () => {
 		clearAutorunTest();
 		testCodeLensProvider.rerenderCodeLenses();
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.showAutorunTest', showAutorunTest));
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.show', showAutorunTest));
 	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(cachePackageTests));
 }
 

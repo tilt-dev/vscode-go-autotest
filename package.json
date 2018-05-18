@@ -1,5 +1,5 @@
 {
-  "name": "wm-autorun",
+  "name": "vscode-go-autotest",
   "version": "0.0.1",
   "publisher": "windmill",
   "description": "Adds an autorun test button to vscode's Go mode",
@@ -17,7 +17,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/windmilleng/wm-autorun.git"
+    "url": "https://github.com/windmilleng/vscode-go-autotest.git"
   },
   "keywords": [
     "multi-root ready"
@@ -69,17 +69,17 @@
     ],
     "commands": [
       {
-        "command": "go.test.autorunTest",
+        "command": "go.autotest.pin",
         "title": "Go: Pin Test",
         "description": "Pins a test to autorun on every save"
       },
       {
-        "command": "go.test.clearAutorunTest",
+        "command": "go.autotest.clear",
         "title": "Go: Clear Pinned Test",
         "description": "Clear the pinned test"
       },
       {
-        "command": "go.test.showAutorunTest",
+        "command": "go.autotest.show",
         "title": "Go: Show Pinned Test",
         "description": "Show the current output of the pinned test"
       }

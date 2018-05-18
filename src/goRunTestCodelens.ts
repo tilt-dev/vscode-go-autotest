@@ -80,16 +80,16 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 					codelens.push(new CodeLens(func.location.range, {
 						title: 'remove pin',
-						command: 'go.test.clearAutorunTest'
+						command: 'go.autotest.clear'
 					}));
 					codelens.push(new CodeLens(func.location.range, {
 						title: 'show output',
-						command: 'go.test.showAutorunTest'
+						command: 'go.autotest.show'
 					}));
 				} else {
 					codelens.push(new CodeLens(func.location.range, {
 						title: 'pin test',
-						command: 'go.test.autorunTest',
+						command: 'go.autotest.pin',
 						arguments: [{ symbol: func }]
 					}));
 				}
