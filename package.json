@@ -1,27 +1,23 @@
 {
   "name": "vscode-go-autotest",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "publisher": "windmill",
-  "description": "Adds an autorun test button to vscode's Go mode",
+  "description": "Adds autotest functionality to vscode's Go mode",
+  "license": "MIT",
   "author": {
     "name": "Windmill Engineering"
   },
   "icon": "images/goIcon.png",
   "categories": [
-      "Programming Languages"
+    "Programming Languages"
   ],
-  "galleryBanner": {
-    "color": "#CFB69A",
-    "theme": "light"
-  },
   "private": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/windmilleng/vscode-go-autotest.git"
   },
-  "keywords": [
-    "multi-root ready"
-  ],
+  "keywords": [],
+  "preview": true,
   "scripts": {
     "vscode:prepublish": "tsc -p ./",
     "compile": "tsc -watch -p ./",
@@ -42,6 +38,7 @@
     "@types/mocha": "^2.2.33",
     "@types/node": "^6.0.50",
     "fs-extra": "^1.0.0",
+    "mocha": "^4.1.0",
     "tslint": "^4.0.2",
     "typescript": "^2.1.5",
     "vscode": "^1.1.4"
@@ -56,17 +53,6 @@
   ],
   "main": "./out/src/goMain",
   "contributes": {
-    "languages": [
-      {
-        "id": "go",
-        "extensions": [
-          ".go"
-        ],
-        "aliases": [
-          "Go"
-        ]
-      }
-    ],
     "commands": [
       {
         "command": "go.autotest.pin",
