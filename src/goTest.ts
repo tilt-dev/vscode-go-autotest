@@ -8,12 +8,14 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions  } from './testUtils';
+import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, TestResult  } from './testUtils';
 import { sendTelemetryEvent } from './util';
 import { pinDisplay, autotestDisplay } from './diags';
 import { outputChannel } from './goStatus';
+import { rerenderCodeLenses } from './goBaseCodelens';
 
 let autorunTestConfig: TestConfig;
+let lastAutorunTestResult: TestResult;
 let autorunTestStart: number;
 
 let autotestFileConfig: TestConfig;
@@ -81,6 +83,7 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 
 		// focus the problems pane so that we see the new testConfig
 		vscode.commands.executeCommand('workbench.action.problems.focus');
+		rerenderCodeLenses();
 
 		// fire and forget the test
 		runAutorunTest();
@@ -98,11 +101,12 @@ function updateAutorunStatus() {
 	}
 }
 
-export function runAutorunTest() {
+export function runAutorunTest(): Thenable<void> {
 	if (!autorunTestConfig) {
-		return;
+		return Promise.resolve();
 	}
 	return goTest(autorunTestConfig).then((result) => {
+		lastAutorunTestResult = result;
 		pinDisplay.clear();
 
 		for (let fn of autorunTestConfig.functions) {
@@ -114,6 +118,8 @@ export function runAutorunTest() {
 				pinDisplay.displayFailure(fn);
 			}
 		}
+
+		rerenderCodeLenses();
 	}).then(null, err => {
 		console.error(err);
 	});
@@ -124,7 +130,7 @@ export function showAutorunTest(args) {
 		return;
 	}
 
-	sendTelemetryEvent('autorunTest-show', {}, {});
+	sendTelemetryEvent('autorunTest-show', {success: args.success}, {});
 	autorunTestConfig.output.show(true);
 }
 
@@ -138,12 +144,18 @@ export function clearAutorunTest() {
 	autorunTestStart = 0;
 	autorunTestConfig.output.dispose();
 	autorunTestConfig = null;
+	lastAutorunTestResult = null;
 	updateAutorunStatus();
 	pinDisplay.clear();
+	rerenderCodeLenses();
 }
 
 export function currentAutorunTestConfig(): TestConfig {
 	return autorunTestConfig;
+}
+
+export function getLastAutorunTestResult(): TestResult {
+	return lastAutorunTestResult;
 }
 
 export function showAutotestFileOutput(args) {

@@ -17,8 +17,24 @@ export abstract class GoBaseCodeLensProvider implements vscode.CodeLensProvider 
 		}
 	}
 
+	public rerenderCodeLenses() {
+		this.onDidChangeCodeLensesEmitter.fire();
+	}
+
 	provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
 		return [];
 	}
 
+}
+
+let codeLens: GoBaseCodeLensProvider;
+
+export function setDefaultCodeLens(cl: GoBaseCodeLensProvider) {
+	codeLens = cl;
+}
+
+export function rerenderCodeLenses() {
+	if (codeLens) {
+		codeLens.rerenderCodeLenses();
+	}
 }
