@@ -79,17 +79,24 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.show', showAutorunTest));
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.showFile', showAutotestFileOutput));
-	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(cachePackageTests));
+
+	// Automatically run the tests if:
+	// 1) There's a test file open when the extension activates, or
+	// 2) The user changes the active text editor to a test file.
+	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(autotestCurrentFile));
+	if (vscode.window.activeTextEditor) {
+		autotestCurrentFile(vscode.window.activeTextEditor);
+	}
 }
 
 export function deactivate() {
 	return disposeTelemetryReporter();
 }
 
-function cachePackageTests(v: vscode.TextEditor) {
+function autotestCurrentFile(v: vscode.TextEditor) {
 	cleanUpOldAutotestFileOutput();
-	let goConfig = vscode.workspace.getConfiguration('go', v ? v.document.uri : null);
 
+	let goConfig = vscode.workspace.getConfiguration('go', v ? v.document.uri : null);
 	testCurrentFileSilently(goConfig, []);
 }
 
