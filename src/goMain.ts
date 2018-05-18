@@ -21,12 +21,14 @@ import { isGoPathSet, getBinPath, getExtensionCommands, getGoVersion, getCurrent
 import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { implCursor } from './goImpl';
 import { initDiagnosticCollection, autotestDisplay } from './diags';
+import { setDefaultCodeLens } from './goBaseCodelens';
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	initDiagnosticCollection(ctx);
 
 	let testCodeLensProvider = new GoRunTestCodeLensProvider();
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));
+	setDefaultCodeLens(testCodeLensProvider);
 
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
 		let updatedGoConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
@@ -67,14 +69,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.pin', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-		setAutorunAtCursor(goConfig, false, args).then(() => {
-		  testCodeLensProvider.rerenderCodeLenses();
-		});
+		setAutorunAtCursor(goConfig, false, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.clear', () => {
 		clearAutorunTest();
-		testCodeLensProvider.rerenderCodeLenses();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.show', showAutorunTest));

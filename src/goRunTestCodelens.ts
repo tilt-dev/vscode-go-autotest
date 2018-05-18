@@ -12,19 +12,9 @@ import { getTestFunctions, getBenchmarkFunctions, getTestFlags } from './testUti
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getCurrentGoPath } from './util';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
-import { currentAutorunTestConfig } from './goTest';
+import { currentAutorunTestConfig, getLastAutorunTestResult } from './goTest';
 
 export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
-	private readonly debugConfig: any = {
-		'name': 'Launch',
-		'type': 'go',
-		'request': 'launch',
-		'mode': 'test',
-		'env': {
-			'GOPATH': getCurrentGoPath() // Passing current GOPATH to Delve as it runs in another process
-		}
-	};
-
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
 		if (!this.enabled) {
 			return [];
@@ -51,10 +41,6 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		});
 	}
 
-	public rerenderCodeLenses() {
-		this.onDidChangeCodeLensesEmitter.fire();
-	}
-
 	private getCodeLensForPackage(document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
 		let documentSymbolProvider = new GoDocumentSymbolProvider();
 		return documentSymbolProvider.provideDocumentSymbols(document, token)
@@ -72,6 +58,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		const codelens: CodeLens[] = [];
 
 		const testPromise = getTestFunctions(document, token).then(testFunctions => {
+			let testResult = getLastAutorunTestResult();
 			testFunctions.forEach(func => {
 
 				let autorun = currentAutorunTestConfig();
@@ -82,10 +69,16 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 						title: 'remove pin',
 						command: 'go.autotest.clear'
 					}));
-					codelens.push(new CodeLens(func.location.range, {
-						title: 'show output',
-						command: 'go.autotest.show'
-					}));
+
+					if (testResult && (func.name in testResult.tests)) {
+						let success = testResult.tests[func.name];
+						let title = success ? 'output (ok)' : 'output (FAIL)';
+						codelens.push(new CodeLens(func.location.range, {
+							title: title,
+							command: 'go.autotest.show',
+							arguments: [{ success }],
+						}));
+					}
 				} else {
 					codelens.push(new CodeLens(func.location.range, {
 						title: 'pin test',
