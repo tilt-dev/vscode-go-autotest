@@ -88,8 +88,8 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 let autorunStatus: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
 function updateAutorunStatus() {
 	if (autorunTestConfig) {
-		autorunStatus.text = 'Autorun: ' + autorunTestConfig.functions[0].name;
-		autorunStatus.command = 'go.test.showAutorunTest';
+		autorunStatus.text = 'Autotest: ' + autorunTestConfig.functions[0].name;
+		autorunStatus.command = 'go.autotest.show';
 		autorunStatus.show();
 	} else {
 		autorunStatus.hide();
