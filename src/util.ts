@@ -12,7 +12,7 @@ import fs = require('fs');
 import os = require('os');
 import { outputChannel } from './goStatus';
 
-const extensionId: string = 'windmill.vscode-go-autotest';
+const extensionId: string = 'windmilleng.vscode-go-autotest';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
 const aiKey: string = 'c490a00e-fb9a-4ee5-b30c-dd5ed51518aa';
 
