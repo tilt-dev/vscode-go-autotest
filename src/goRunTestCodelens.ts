@@ -93,8 +93,8 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 						arguments: [{ symbol: func }]
 					}));
 					codelens.push(new CodeLens(func.location.range, {
-						title: 'show cached output',
-						command: 'go.test.showCachedTest'
+						title: 'show file autotest output',
+						command: 'go.autotest.showFile'
 					}));
 				}
 			});

@@ -16,7 +16,7 @@ import { outputChannel } from './goStatus';
 let autorunTestConfig: TestConfig;
 let autorunTestStart: number;
 
-let cachedTestConfig: TestConfig;
+let autotestFileConfig: TestConfig;
 
 // Returns a promise that completes when the configuration is set.
 export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any): Thenable<any> {
@@ -146,13 +146,13 @@ export function currentAutorunTestConfig(): TestConfig {
 	return autorunTestConfig;
 }
 
-export function showCachedTest(args) {
-	if (!cachedTestConfig) {
+export function showAutotestFileOutput(args) {
+	if (!autotestFileConfig) {
 		return;
 	}
 
-	sendTelemetryEvent('cachedTest-show', {}, {});
-	cachedTestConfig.output.show(true);
+	sendTelemetryEvent('autotestFileOutput-show', {}, {});
+	autotestFileConfig.output.show(true);
 }
 
 export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration, args: string[]): Thenable<void> {
@@ -180,7 +180,7 @@ export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration,
 			background: true,
 			output: output,
 		};
-		cachedTestConfig = testConfig;
+		autotestFileConfig = testConfig;
 		return Promise.all([goTest(testConfig), testFunctions]);
 	}).then((resultArray) => {
 		autotestDisplay.clear();
@@ -199,8 +199,8 @@ export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration,
 	});
 }
 
-export function cleanUpOldCachedTestOutput() {
-	if (cachedTestConfig && cachedTestConfig.output) {
-		cachedTestConfig.output.dispose();
+export function cleanUpOldAutotestFileOutput() {
+	if (autotestFileConfig && autotestFileConfig.output) {
+		autotestFileConfig.output.dispose();
 	}
 }
