@@ -85,24 +85,6 @@ export function deactivate() {
 	return disposeTelemetryReporter();
 }
 
-function didLangServerConfigChange(useLangServer: boolean, langServerFlags: string[], newconfig: vscode.WorkspaceConfiguration) {
-	let newLangServerFlags = newconfig['languageServerFlags'] || [];
-	if (useLangServer !== newconfig['useLanguageServer'] || langServerFlags.length !== newLangServerFlags.length) {
-		return true;
-	}
-
-	for (let i = 0; i < langServerFlags.length; i++) {
-		if (newLangServerFlags[i] !== langServerFlags[i]) {
-			return true;
-		}
-	}
-	return false;
-}
-
-function loadPackages() {
-	getAllPackages();
-}
-
 function cachePackageTests(v: vscode.TextEditor) {
 	let goConfig = vscode.workspace.getConfiguration('go', v ? v.document.uri : null);
 
