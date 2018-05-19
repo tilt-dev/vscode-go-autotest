@@ -1,0 +1,21 @@
+# https://circleci.com/docs/2.0/language-javascript/
+version: 2
+jobs:
+  build:
+    docker:
+      - image: gcr.io/windmill-public-containers/circleci-vscode:latest
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn install --ignore-engines
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - ./node_modules
+      - run: node_modules/.bin/tsc
+      - run: echo 'export GOPATH=/go' >> $BASH_ENV
+      - run: echo 'export PATH=/go/bin:$PATH' >> $BASH_ENV
+      # Run vscode inside a virtual framebuffer
+      - run: xvfb-run yarn test
