@@ -12,7 +12,7 @@ import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
 import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
-import { clearPinnedTest, showAutorunTest, showAutotestFileOutput, maybeAutorunTestsOnChange, maybeAutotestCurrentFile, pinTestAtCursor } from './goTest';
+import { clearPinnedTest, showAutorunTest, showAutotestFileOutput, maybeAutorunTestsOnChange, maybeAutotestCurrentFile, pinTestAtCursor, updatePinnedTestLocation } from './goTest';
 import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, disposeTelemetryReporter, getToolsEnvVars } from './util';
@@ -56,6 +56,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	let onChange = _.debounce(maybeAutorunTestsOnChange, 200);
 	watcher.onDidChange(onChange);
+	watcher.onDidChange(updatePinnedTestLocation);
 	watcher.onDidCreate(onChange);
 	watcher.onDidDelete(onChange);
 
