@@ -12,7 +12,7 @@ import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
 import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
-import { setAutorunAtCursor, runAutorunTest, clearAutorunTest, showAutorunTest, showAutotestFileOutput,  testCurrentFileSilently, cleanUpOldAutotestFileOutput } from './goTest';
+import { clearPinnedTest, showAutorunTest, showAutotestFileOutput, maybeAutorunTestsOnChange, maybeAutotestCurrentFile, pinTestAtCursor } from './goTest';
 import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, disposeTelemetryReporter, getToolsEnvVars } from './util';
@@ -54,11 +54,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		path.join(vscode.workspace.rootPath, '**', '*.go')
 	);
 
-	let onChange = _.debounce(() => {
-		// clear the autotest errors after a change.
-		autotestDisplay.clear();
-		runAutorunTest();
-	}, 200);
+	let onChange = _.debounce(maybeAutorunTestsOnChange, 200);
 	watcher.onDidChange(onChange);
 	watcher.onDidCreate(onChange);
 	watcher.onDidDelete(onChange);
@@ -67,33 +63,21 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.pin', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-		setAutorunAtCursor(goConfig, false, args);
+		pinTestAtCursor(goConfig, false, args);
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.clear', () => {
-		clearAutorunTest();
-	}));
-
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.clear', clearPinnedTest));
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.show', showAutorunTest));
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.autotest.showFile', showAutotestFileOutput));
 
 	// Automatically run the tests if:
 	// 1) There's a test file open when the extension activates, or
 	// 2) The user changes the active text editor to a test file.
-	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(autotestCurrentFile));
-	if (vscode.window.activeTextEditor) {
-		autotestCurrentFile(vscode.window.activeTextEditor);
-	}
+	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(maybeAutotestCurrentFile));
+	maybeAutotestCurrentFile();
 }
 
 export function deactivate() {
 	return disposeTelemetryReporter();
-}
-
-function autotestCurrentFile(v: vscode.TextEditor) {
-	cleanUpOldAutotestFileOutput();
-
-	let goConfig = vscode.workspace.getConfiguration('go', v ? v.document.uri : null);
-	testCurrentFileSilently(goConfig, []);
 }
 
