@@ -115,14 +115,23 @@ export function maybeAutorunTestsOnChange(): Thenable<void> {
 	return maybeAutotestCurrentFile();
 }
 
+function log(msg: string) {
+	console.log(new Date().toLocaleTimeString() + ' ' + msg);
+}
+
 function runPinnedTest(): Thenable<void> {
 	if (!autorunTestConfig) {
 		return Promise.resolve();
 	}
+	let fnName = autorunTestConfig.functions[0].name;
+	log('Running pinned test ' + fnName);
 	return goTest(autorunTestConfig).then((result) => {
+		log('[done] running pinned test ' + fnName);
 		lastAutorunTestResult = result;
 		pinDisplay.clear();
 
+		// If the buildFailed, we still show the pinned results
+		// as failures, because the user expects them to be pinned.
 		for (let fn of autorunTestConfig.functions) {
 			if (!(fn.name in result.tests)) {
 				pinDisplay.displayUnknown(fn);
@@ -132,9 +141,9 @@ function runPinnedTest(): Thenable<void> {
 				pinDisplay.displayFailure(fn);
 			}
 		}
-
+	}).then(() => {
 		rerenderCodeLenses();
-	}).then(null, err => {
+	}, err => {
 		console.error(err);
 	});
 }
@@ -229,20 +238,29 @@ export function maybeAutotestCurrentFile(): Thenable<void> {
 			output: output,
 		};
 		autotestFileConfig = testConfig;
+
+		log('Autotesting file ' + fileName);
 		return Promise.all([goTest(testConfig), testFunctions]);
 	}).then((resultArray) => {
+		log('[done] autotesting file ' + fileName);
 		autotestDisplay.clear();
 
 		let [result, testFunctions] = resultArray;
 		lastAutotestFileResult = result;
+
+		// Don't show failure diagnostics on all tests if they failed
+		// to build. It's just noise.
+		if (result.buildFailed) {
+			return;
+		}
+
 		for (let fn of testFunctions) {
 			if (result.tests[fn.name] === false) {
 				autotestDisplay.displayFailure(fn);
 			}
 		}
-		rerenderCodeLenses();
 	}).then(() => {
-		// this space intentionally left blank
+		rerenderCodeLenses();
 	}, (err) => {
 		console.error(err);
 		return Promise.resolve(false);
