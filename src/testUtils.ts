@@ -67,6 +67,10 @@ export interface TestResult {
 	 */
 	success: boolean;
 	/**
+	 * Whether the test failed to compile.
+	 */
+	buildFailed: boolean;
+	/**
 	 * Test cases indexed by name. True for success, false for error.
 	 */
 	tests: TestSet;
@@ -143,6 +147,7 @@ export function goTest(testconfig: TestConfig): Thenable<TestResult> {
 	return new Promise<TestResult>((resolve, reject) => {
 		let result: TestResult = {
 			success: false,
+			buildFailed: false,
 			tests: {}
 		};
 		outputChannel.clear();
@@ -196,6 +201,7 @@ export function goTest(testconfig: TestConfig): Thenable<TestResult> {
 
 			const testResultLineRE = /^[ \t\-]+(ok|FAIL)[ \t\:]+([^ ]+) /; // 1=ok/FAIL, 2=testname
 			const packageResultLineRE = /^(ok|FAIL)[ \t]+(.+?)[ \t]+([0-9\.]+s|\(cached\))/; // 1=ok/FAIL, 2=package, 3=time/(cached)
+			const buildFailedLineRE = /^FAIL[ \t]+.+? \[build failed\]/;
 			const testResultLines: string[] = [];
 
 			const processTestResultLine = (line: string) => {
@@ -212,6 +218,11 @@ export function goTest(testconfig: TestConfig): Thenable<TestResult> {
 					const baseDir = path.join(currentGoWorkspace, ...packageNameArr);
 					testResultLines.forEach(line => outputChannel.appendLine(expandFilePathInOutput(line, baseDir)));
 					testResultLines.splice(0);
+				}
+
+				const buildFailedLine = line.match(buildFailedLineRE);
+				if (buildFailedLine) {
+					result.buildFailed = true;
 				}
 			};
 
@@ -248,6 +259,10 @@ export function goTest(testconfig: TestConfig): Thenable<TestResult> {
 					// Populate the testCases manually.
 					for (let fn of testconfig.functions) {
 						result.tests[fn.name] = true;
+					}
+				} else if (result.buildFailed && testconfig.functions) {
+					for (let fn of testconfig.functions) {
+						result.tests[fn.name] = false;
 					}
 				}
 				resolve(result);
