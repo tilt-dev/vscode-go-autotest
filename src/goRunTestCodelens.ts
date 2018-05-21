@@ -12,7 +12,7 @@ import { getTestFunctions, getBenchmarkFunctions, getTestFlags } from './testUti
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getCurrentGoPath } from './util';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
-import { currentAutorunTestConfig, getLastAutorunTestResult } from './goTest';
+import { currentAutorunTestConfig, getLastAutorunTestResult, getLastAutotestFileResult } from './goTest';
 
 export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
@@ -33,7 +33,8 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		const codelens: CodeLens[] = [];
 
 		const testPromise = getTestFunctions(document, token).then(testFunctions => {
-			let testResult = getLastAutorunTestResult();
+			let pinTestResult = getLastAutorunTestResult();
+			let fileTestResult = getLastAutotestFileResult();
 			testFunctions.forEach(func => {
 
 				let autorun = currentAutorunTestConfig();
@@ -45,8 +46,8 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 						command: 'go.autotest.clear'
 					}));
 
-					if (testResult && (func.name in testResult.tests)) {
-						let success = testResult.tests[func.name];
+					if (pinTestResult && (func.name in pinTestResult.tests)) {
+						let success = pinTestResult.tests[func.name];
 						let title = success ? 'output (ok)' : 'output (FAIL)';
 						codelens.push(new CodeLens(func.location.range, {
 							title: title,
@@ -60,10 +61,15 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 						command: 'go.autotest.pin',
 						arguments: [{ symbol: func }]
 					}));
-					codelens.push(new CodeLens(func.location.range, {
-						title: 'show file autotest output',
-						command: 'go.autotest.showFile'
-					}));
+					if (fileTestResult && (func.name in fileTestResult.tests)) {
+						let success = fileTestResult.tests[func.name];
+						let title = success ? 'output (ok)' : 'output (FAIL)';
+						codelens.push(new CodeLens(func.location.range, {
+							title: title,
+							command: 'go.autotest.showFile',
+							arguments: [{ success }],
+						}));
+					}
 				}
 			});
 		});

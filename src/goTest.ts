@@ -19,6 +19,7 @@ let lastAutorunTestResult: TestResult;
 let autorunTestStart: number;
 
 let autotestFileConfig: TestConfig;
+let lastAutotestFileResult: TestResult;
 
 // Returns a promise that completes when the configuration is set.
 export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any): Thenable<any> {
@@ -158,12 +159,16 @@ export function getLastAutorunTestResult(): TestResult {
 	return lastAutorunTestResult;
 }
 
+export function getLastAutotestFileResult(): TestResult {
+	return lastAutotestFileResult;
+}
+
 export function showAutotestFileOutput(args) {
 	if (!autotestFileConfig) {
 		return;
 	}
 
-	sendTelemetryEvent('autotestFileOutput-show', {}, {});
+	sendTelemetryEvent('autotestFileOutput-show', {success: args.success}, {});
 	autotestFileConfig.output.show(true);
 }
 
@@ -198,11 +203,13 @@ export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration,
 		autotestDisplay.clear();
 
 		let [result, testFunctions] = resultArray;
+		lastAutotestFileResult = result;
 		for (let fn of testFunctions) {
 			if (result.tests[fn.name] === false) {
 				autotestDisplay.displayFailure(fn);
 			}
 		}
+		rerenderCodeLenses();
 	}).then(() => {
 		// this space intentionally left blank
 	}, (err) => {
@@ -214,5 +221,7 @@ export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration,
 export function cleanUpOldAutotestFileOutput() {
 	if (autotestFileConfig && autotestFileConfig.output) {
 		autotestFileConfig.output.dispose();
+		autotestFileConfig = null;
+		lastAutotestFileResult = null;
 	}
 }
