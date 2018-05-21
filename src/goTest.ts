@@ -22,7 +22,7 @@ let autotestFileConfig: TestConfig;
 let lastAutotestFileResult: TestResult;
 
 // Returns a promise that completes when the configuration is set.
-export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any): Thenable<any> {
+export function pinTestAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any): Thenable<any> {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -33,8 +33,10 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 		return Promise.resolve(true);
 	}
 
-	clearAutorunTest();
-	sendTelemetryEvent('autorunTest', { args }, {});
+	cleanUpOldAutotestFileOutput();
+	autotestDisplay.clear();
+	clearPinnedTest();
+	sendTelemetryEvent('autotest-pin', { args }, {});
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
@@ -67,6 +69,7 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 		const testConfig = {
 			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
+			fileName: editor.document.fileName,
 			flags: testFlags,
 			functions: [testFunction],
 			isBenchmark: isBenchmark,
@@ -87,7 +90,7 @@ export function setAutorunAtCursor(goConfig: vscode.WorkspaceConfiguration, isBe
 		rerenderCodeLenses();
 
 		// fire and forget the test
-		runAutorunTest();
+		runPinnedTest();
 	});
 }
 
@@ -102,7 +105,17 @@ function updateAutorunStatus() {
 	}
 }
 
-export function runAutorunTest(): Thenable<void> {
+export function maybeAutorunTestsOnChange(): Thenable<void> {
+	// If there's a pinned test, run that now.
+	if (autorunTestConfig) {
+		return runPinnedTest();
+	}
+
+	// Otherwise, run the current file if it's a test file.
+	return maybeAutotestCurrentFile();
+}
+
+function runPinnedTest(): Thenable<void> {
 	if (!autorunTestConfig) {
 		return Promise.resolve();
 	}
@@ -131,17 +144,17 @@ export function showAutorunTest(args) {
 		return;
 	}
 
-	sendTelemetryEvent('autorunTest-show', {success: args.success}, {});
+	sendTelemetryEvent('autotest-showPin', {success: args.success}, {});
 	autorunTestConfig.output.show(true);
 }
 
-export function clearAutorunTest() {
+export function clearPinnedTest() {
 	if (!autorunTestConfig) {
 		return;
 	}
 
 	let timeTaken = Date.now() - autorunTestStart;
-	sendTelemetryEvent('autorunTest-clear', {}, { timeTaken });
+	sendTelemetryEvent('autotest-clearPin', {}, { timeTaken });
 	autorunTestStart = 0;
 	autorunTestConfig.output.dispose();
 	autorunTestConfig = null;
@@ -172,27 +185,45 @@ export function showAutotestFileOutput(args) {
 	autotestFileConfig.output.show(true);
 }
 
-export function testCurrentFileSilently(goConfig: vscode.WorkspaceConfiguration, args: string[]): Thenable<void> {
+function isTestFileActive(): boolean {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
-		return;
+		return false;
 	}
-	if (!editor.document.fileName.endsWith('_test.go')) {
-		return;
-	}
+	return editor.document.fileName.endsWith('_test.go');
+}
+
+export function maybeAutotestCurrentFile(): Thenable<void> {
+	let oldFileName = autotestFileConfig && autotestFileConfig.fileName;
+	cleanUpOldAutotestFileOutput();
 
 	// Don't do this if a test is already pinned.
 	if (autorunTestConfig) {
-		return;
+		autotestDisplay.clear();
+		return Promise.resolve();
 	}
 
+	if (!isTestFileActive()) {
+		autotestDisplay.clear();
+		return Promise.resolve();
+	}
+
+	let editor = vscode.window.activeTextEditor;
+	let goConfig = vscode.workspace.getConfiguration('go', editor ? editor.document.uri : null);
 	let output = vscode.window.createOutputChannel('Go Test ' + editor.document.fileName);
+
+	let fileName = editor.document.fileName;
+	let dir = path.dirname(fileName);
+	if (oldFileName !== fileName) {
+		autotestDisplay.clear();
+	}
 
 	return getTestFunctions(editor.document, null).then(testFunctions => {
 		const testConfig = {
 			goConfig: goConfig,
-			dir: path.dirname(editor.document.fileName),
-			flags: getTestFlags(goConfig, args),
+			dir: dir,
+			fileName: fileName,
+			flags: getTestFlags(goConfig, []),
 			functions: testFunctions,
 			background: true,
 			output: output,

@@ -23,6 +23,11 @@ export interface TestConfig {
 	 */
 	dir: string;
 	/**
+	 * The filename of the file being tested, for bookkeeping so
+	 * that we know when to clear the display.
+	 */
+	fileName: string;
+	/**
 	 * Configuration for the Go extension
 	 */
 	goConfig: vscode.WorkspaceConfiguration;
