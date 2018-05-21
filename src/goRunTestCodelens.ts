@@ -26,32 +26,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 			return [];
 		}
 
-		return Promise.all([
-			this.getCodeLensForPackage(document, token),
-			this.getCodeLensForFunctions(config, document, token)
-		]).then(([pkg, fns]) => {
-			let res = [];
-			if (pkg && Array.isArray(pkg)) {
-				res = res.concat(pkg);
-			}
-			if (fns && Array.isArray(fns)) {
-				res = res.concat(fns);
-			}
-			return res;
-		});
-	}
-
-	private getCodeLensForPackage(document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
-		let documentSymbolProvider = new GoDocumentSymbolProvider();
-		return documentSymbolProvider.provideDocumentSymbols(document, token)
-			.then(symbols => symbols.find(sym => sym.kind === vscode.SymbolKind.Package && !!sym.name))
-			.then(pkg => {
-				if (pkg) {
-					const range = pkg.location.range;
-					return [
-					];
-				}
-			});
+		return this.getCodeLensForFunctions(config, document, token);
 	}
 
 	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
