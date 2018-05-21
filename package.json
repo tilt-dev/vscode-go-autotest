@@ -1,77 +1,77 @@
 {
-  "name": "vscode-go-autotest",
-  "displayName": "Go Autotest",
-  "version": "1.0.0",
-  "publisher": "windmilleng",
-  "description": "Adds autotest functionality to vscode's Go mode",
-  "license": "MIT",
-  "author": {
-    "name": "Windmill Engineering"
-  },
-  "icon": "images/goIcon.png",
-  "categories": [
-    "Programming Languages"
-  ],
-  "private": true,
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/windmilleng/vscode-go-autotest.git"
-  },
-  "keywords": [],
-  "preview": true,
-  "scripts": {
-    "vscode:prepublish": "tsc -p ./",
-    "compile": "tsc -watch -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install",
-    "test": "node ./node_modules/vscode/bin/test",
-    "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./test/*.ts"
-  },
-  "extensionDependencies": [],
-  "dependencies": {
-    "console-stamp": "^0.2.2",
-    "diff": "~3.3.0",
-    "lodash": "^4.17.10",
-    "vscode": "^1.1.4",
-    "vscode-extension-telemetry": "^0.0.15"
-  },
-  "devDependencies": {
-    "@types/fs-extra": "0.0.35",
-    "@types/mocha": "^2.2.33",
-    "@types/node": "^6.0.50",
-    "fs-extra": "^1.0.0",
-    "mocha": "^4.1.0",
-    "tslint": "^4.0.2",
-    "typescript": "^2.1.5",
-    "vscode": "^1.1.4"
-  },
-  "engines": {
-    "vscode": "^1.22.0"
-  },
-  "activationEvents": [
-    "onLanguage:go",
-    "onCommand:go.gopath",
-    "onCommand:go.tools.install"
-  ],
-  "main": "./out/src/goMain",
-  "contributes": {
-    "commands": [
-      {
-        "command": "go.autotest.pin",
-        "title": "Go: Pin Test",
-        "description": "Pins a test to autorun on every save"
-      },
-      {
-        "command": "go.autotest.clear",
-        "title": "Go: Clear Pinned Test",
-        "description": "Clear the pinned test"
-      },
-      {
-        "command": "go.autotest.show",
-        "title": "Go: Show Pinned Test",
-        "description": "Show the current output of the pinned test"
-      }
+    "name": "vscode-go-autotest",
+    "displayName": "Go Autotest",
+    "version": "1.1.0",
+    "publisher": "windmilleng",
+    "description": "Adds autotest functionality to vscode's Go mode",
+    "license": "MIT",
+    "author": {
+        "name": "Windmill Engineering"
+    },
+    "icon": "images/goIcon.png",
+    "categories": [
+        "Programming Languages"
     ],
-    "configuration": {},
-    "menus": {}
-  }
+    "private": true,
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/windmilleng/vscode-go-autotest.git"
+    },
+    "keywords": [],
+    "preview": true,
+    "scripts": {
+        "vscode:prepublish": "tsc -p ./",
+        "compile": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "node ./node_modules/vscode/bin/test",
+        "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./test/*.ts"
+    },
+    "extensionDependencies": [],
+    "dependencies": {
+        "console-stamp": "^0.2.2",
+        "diff": "~3.3.0",
+        "lodash": "^4.17.10",
+        "vscode": "^1.1.4",
+        "vscode-extension-telemetry": "^0.0.15"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "0.0.35",
+        "@types/mocha": "^2.2.33",
+        "@types/node": "^6.0.50",
+        "fs-extra": "^1.0.0",
+        "mocha": "^4.1.0",
+        "tslint": "^4.0.2",
+        "typescript": "^2.1.5",
+        "vscode": "^1.1.4"
+    },
+    "engines": {
+        "vscode": "^1.22.0"
+    },
+    "activationEvents": [
+        "onLanguage:go",
+        "onCommand:go.gopath",
+        "onCommand:go.tools.install"
+    ],
+    "main": "./out/src/goMain",
+    "contributes": {
+        "commands": [
+            {
+                "command": "go.autotest.pin",
+                "title": "Go: Pin Test",
+                "description": "Pins a test to autorun on every save"
+            },
+            {
+                "command": "go.autotest.clear",
+                "title": "Go: Clear Pinned Test",
+                "description": "Clear the pinned test"
+            },
+            {
+                "command": "go.autotest.show",
+                "title": "Go: Show Pinned Test",
+                "description": "Show the current output of the pinned test"
+            }
+        ],
+        "configuration": {},
+        "menus": {}
+    }
 }
