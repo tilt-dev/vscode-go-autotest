@@ -8,9 +8,7 @@
 import vscode = require('vscode');
 import path = require('path');
 import _ = require('lodash');
-import { GoDocumentSymbolProvider } from './goOutline';
 import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
-import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';

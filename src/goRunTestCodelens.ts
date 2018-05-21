@@ -9,7 +9,6 @@ import vscode = require('vscode');
 import path = require('path');
 import { TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
 import { getTestFunctions, getBenchmarkFunctions, getTestFlags } from './testUtils';
-import { GoDocumentSymbolProvider } from './goOutline';
 import { getCurrentGoPath } from './util';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 import { currentAutorunTestConfig, getLastAutorunTestResult } from './goTest';

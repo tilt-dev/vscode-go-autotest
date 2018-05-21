@@ -20,54 +20,6 @@ interface GoSymbolDeclaration {
 	character: number;
 }
 
-export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider {
-
-	private goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
-		'package': vscode.SymbolKind.Package,
-		'import': vscode.SymbolKind.Namespace,
-		'var': vscode.SymbolKind.Variable,
-		'type': vscode.SymbolKind.Interface,
-		'func': vscode.SymbolKind.Function,
-		'const': vscode.SymbolKind.Constant,
-	};
-
-	public provideWorkspaceSymbols(query: string, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
-		let convertToCodeSymbols = (decls: GoSymbolDeclaration[], symbols: vscode.SymbolInformation[]): void => {
-			decls.forEach(decl => {
-				let kind: vscode.SymbolKind;
-				if (decl.kind !== '') {
-					kind = this.goKindToCodeKind[decl.kind];
-				}
-				let pos = new vscode.Position(decl.line, decl.character);
-				let symbolInfo = new vscode.SymbolInformation(
-					decl.name,
-					kind,
-					new vscode.Range(pos, pos),
-					vscode.Uri.file(decl.path),
-					'');
-				symbols.push(symbolInfo);
-			});
-		};
-		let root = vscode.workspace.rootPath;
-		if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-			root = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
-		}
-
-		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-
-		if (!root && !goConfig.gotoSymbol.includeGoroot) {
-			vscode.window.showInformationMessage('No workspace is open to find symbols.');
-			return;
-		}
-
-		return getWorkspaceSymbols(root, query, token, goConfig).then(results => {
-			let symbols: vscode.SymbolInformation[] = [];
-			convertToCodeSymbols(results, symbols);
-			return symbols;
-		});
-	}
-}
-
 export function getWorkspaceSymbols(workspacePath: string, query: string, token: vscode.CancellationToken, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
 	if (!goConfig) {
 		goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
