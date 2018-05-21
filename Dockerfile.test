@@ -22,3 +22,11 @@ RUN apt-get update && apt-get install -y \
   xvfb
 
 RUN go get github.com/ramya-rao-a/go-outline
+
+WORKDIR /root/src
+ADD package.json ./
+RUN yarn install --ignore-engines
+ADD . ./
+RUN node_modules/.bin/tsc
+RUN npm run lint
+RUN xvfb-run npm test
