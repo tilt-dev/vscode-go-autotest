@@ -1,4 +1,5 @@
 # Go Autotest for VS Code
+[![CircleCI](https://circleci.com/gh/windmilleng/vscode-go-autotest.png)](https://circleci.com/gh/windmilleng/vscode-go-autotest)
 
 Have you ever been banging your head against the wall, trying to get that one test to pass?
 
