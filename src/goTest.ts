@@ -111,8 +111,11 @@ export function maybeAutorunTestsOnChange(): Thenable<void> {
 		return runPinnedTest();
 	}
 
-	// Otherwise, run the current file if it's a test file.
-	return maybeAutotestCurrentFile();
+	// Otherwise, clear any existing autotests.  We don't want to autotest on
+	// every save because that makes the edit experience laggy on large files.
+	cleanUpOldAutotestFileOutput();
+	autotestDisplay.clear();
+	return Promise.resolve();
 }
 
 function log(msg: string) {
