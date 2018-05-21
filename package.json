@@ -1,5 +1,6 @@
 {
   "name": "vscode-go-autotest",
+  "displayName": "Go Autotest",
   "version": "1.0.0",
   "publisher": "windmilleng",
   "description": "Adds autotest functionality to vscode's Go mode",
