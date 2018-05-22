@@ -12,7 +12,15 @@ Features:
 
 Intended for use with the [vscode-go](https://github.com/Microsoft/vscode-go/) extension.
 
-Watch the Demo:
+## Why?
+
+Windmill is running small experiments on how to make your existing tools feel
+more alive, with fast, responsive feedback. We want to know if this feature fits
+into your workflow, or if it feels like a distraction.
+
+[Love it or hate it, we'd appreciate your feedback!](https://airtable.com/shroJMj6X4pcljufb)
+
+## Demo
 
 ![Demo](videos/demo-autotest-and-pin.gif)
 
