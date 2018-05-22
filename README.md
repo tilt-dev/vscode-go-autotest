@@ -12,6 +12,10 @@ Features:
 
 Intended for use with the [vscode-go](https://github.com/Microsoft/vscode-go/) extension.
 
+Watch the Demo:
+
+![Demo](videos/demo-autotest-and-pin.gif)
+
 ## Privacy
 
 This extension sends Telemetry reports to Azure Application Insights, to help us
