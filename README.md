@@ -10,7 +10,11 @@ Features:
 - Adds an "output" hover button to each test when the test output is aleady known.
 - Adds a "pin test" hover button to automatically run a test on every save and keep the status in view.
 
-Intended for use with the [vscode-go](https://github.com/Microsoft/vscode-go/) extension.
+## How?
+
+Install this extension from the [VS Code marketplace](https://marketplace.visualstudio.com/items?itemName=windmilleng.vscode-go-autotest#overview).
+
+Intended for use with the [VS Code Go](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go) extension.
 
 ## Why?
 
