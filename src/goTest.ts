@@ -290,6 +290,8 @@ export function updatePinnedTestLocation(u: vscode.Uri) {
 					return;
 				}
 			}
+			// if we didn't find the test in this file, assume it was deleted
+			autorunTestConfig = null;
 		});
 
 		rerenderCodeLenses();
