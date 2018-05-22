@@ -21,6 +21,8 @@ import { implCursor } from './goImpl';
 import { initDiagnosticCollection, autotestDisplay } from './diags';
 import { setDefaultCodeLens } from './goBaseCodelens';
 
+const DEBOUNCE_WAIT_TIME_MS = 200;
+
 export function activate(ctx: vscode.ExtensionContext): void {
 	initDiagnosticCollection(ctx);
 
@@ -54,9 +56,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		path.join(vscode.workspace.rootPath, '**', '*.go')
 	);
 
-	let onChange = _.debounce(maybeAutorunTestsOnChange, 200);
+	let onChange = _.debounce(maybeAutorunTestsOnChange, DEBOUNCE_WAIT_TIME_MS);
 	watcher.onDidChange(onChange);
-	watcher.onDidChange(updatePinnedTestLocation);
+	watcher.onDidChange(_.debounce(updatePinnedTestLocation, DEBOUNCE_WAIT_TIME_MS));
 	watcher.onDidCreate(onChange);
 	watcher.onDidDelete(onChange);
 
