@@ -277,3 +277,21 @@ export function cleanUpOldAutotestFileOutput() {
 		lastAutotestFileResult = null;
 	}
 }
+
+export function updatePinnedTestLocation(u: vscode.Uri) {
+	if (autorunTestConfig.fileName === u.path) {
+		// Get all testFunctions from that file
+		vscode.workspace.openTextDocument(autorunTestConfig.fileName).then((document): Thenable<vscode.SymbolInformation[]> => {
+			return getTestFunctions(document, null);
+		}).then(testFunctions => {
+			for (let func of testFunctions) {
+				if (func.name === autorunTestConfig.functions[0].name) {
+					autorunTestConfig.functions[0].location = func.location;
+					return;
+				}
+			}
+		});
+
+		rerenderCodeLenses();
+	}
+}

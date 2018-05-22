@@ -12,7 +12,7 @@ import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
 import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
-import { clearPinnedTest, showAutorunTest, showAutotestFileOutput, maybeAutorunTestsOnChange, maybeAutotestCurrentFile, pinTestAtCursor } from './goTest';
+import { clearPinnedTest, showAutorunTest, showAutotestFileOutput, maybeAutorunTestsOnChange, maybeAutotestCurrentFile, pinTestAtCursor, updatePinnedTestLocation } from './goTest';
 import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, disposeTelemetryReporter, getToolsEnvVars } from './util';
@@ -20,6 +20,8 @@ import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { implCursor } from './goImpl';
 import { initDiagnosticCollection, autotestDisplay } from './diags';
 import { setDefaultCodeLens } from './goBaseCodelens';
+
+const DEBOUNCE_WAIT_TIME_MS = 200;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	initDiagnosticCollection(ctx);
@@ -54,8 +56,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		path.join(vscode.workspace.rootPath, '**', '*.go')
 	);
 
-	let onChange = _.debounce(maybeAutorunTestsOnChange, 200);
+	let onChange = _.debounce(maybeAutorunTestsOnChange, DEBOUNCE_WAIT_TIME_MS);
 	watcher.onDidChange(onChange);
+	watcher.onDidChange(_.debounce(updatePinnedTestLocation, DEBOUNCE_WAIT_TIME_MS));
 	watcher.onDidCreate(onChange);
 	watcher.onDidDelete(onChange);
 
