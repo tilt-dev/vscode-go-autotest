@@ -82,7 +82,7 @@ export function pinTestAtCursor(goConfig: vscode.WorkspaceConfiguration, isBench
 		autorunTestConfig = testConfig;
 
 		// add some ui for the currently running test
-		updateAutorunStatus();
+		updatePinStatus();
 		pinDisplay.displayWaiting(testFunction);
 
 		// focus the problems pane so that we see the new testConfig
@@ -94,14 +94,26 @@ export function pinTestAtCursor(goConfig: vscode.WorkspaceConfiguration, isBench
 	});
 }
 
-let autorunStatus: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
-function updateAutorunStatus() {
+let pinStatus: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
+function updatePinStatus() {
 	if (autorunTestConfig) {
-		autorunStatus.text = 'Autotest: ' + autorunTestConfig.functions[0].name;
-		autorunStatus.command = 'go.autotest.show';
-		autorunStatus.show();
+		let result = getLastAutorunTestResult();
+		let fnName = autorunTestConfig.functions[0].name;
+		if (result) {
+			pinStatus.text = 'Autotest (' + (result.success ? 'ok' : 'FAIL') + '): ' + fnName;
+			if (result.success) {
+				pinStatus.color = '';
+			} else {
+				pinStatus.color = new vscode.ThemeColor('errorForeground');
+			}
+		} else {
+			pinStatus.text = 'Autotest: ' + fnName;
+			pinStatus.color = '';
+		}
+		pinStatus.command = 'go.autotest.show';
+		pinStatus.show();
 	} else {
-		autorunStatus.hide();
+		pinStatus.hide();
 	}
 }
 
@@ -144,6 +156,8 @@ function runPinnedTest(): Thenable<void> {
 				pinDisplay.displayFailure(fn);
 			}
 		}
+
+		updatePinStatus();
 	}).then(() => {
 		rerenderCodeLenses();
 	}, err => {
@@ -156,7 +170,8 @@ export function showAutorunTest(args) {
 		return;
 	}
 
-	sendTelemetryEvent('autotest-showPin', {success: args.success}, {});
+	let success = args && args.success;
+	sendTelemetryEvent('autotest-showPin', {success: success}, {});
 	autorunTestConfig.output.show(true);
 }
 
@@ -171,7 +186,7 @@ export function clearPinnedTest() {
 	autorunTestConfig.output.dispose();
 	autorunTestConfig = null;
 	lastAutorunTestResult = null;
-	updateAutorunStatus();
+	updatePinStatus();
 	pinDisplay.clear();
 	rerenderCodeLenses();
 }
