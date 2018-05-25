@@ -13,6 +13,7 @@ import { sendTelemetryEvent } from './util';
 import { pinDisplay, autotestDisplay } from './diags';
 import { outputChannel } from './goStatus';
 import { rerenderCodeLenses } from './goBaseCodelens';
+import { removeCodeCoverage, clearCoverage, coverProfilePath, clearCoverProfilePath, setCoverProfilePath, reanalyzeCoverage } from './goCover';
 
 let autorunTestConfig: TestConfig;
 let lastAutorunTestResult: TestResult;
@@ -41,6 +42,13 @@ export function pinTestAtCursor(goConfig: vscode.WorkspaceConfiguration, isBench
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
 	const testFlags = getTestFlags(goConfig, args) || [];
+
+	// TODO(nick): By default, this only runs coverage for the current package.
+	// If this is a useful feature, we might make it run coverage for the package
+	// you're currently editing as well.
+	let coverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
+	testFlags.push('-coverprofile=' + coverPath);
+	setCoverProfilePath(coverPath);
 
 	return editor.document.save().then(() => {
 		return getFunctions(editor.document, null);
@@ -160,6 +168,7 @@ function runPinnedTest(): Thenable<void> {
 		updatePinStatus();
 	}).then(() => {
 		rerenderCodeLenses();
+		reanalyzeCoverage();
 	}, err => {
 		console.error(err);
 	});
@@ -189,6 +198,8 @@ export function clearPinnedTest() {
 	updatePinStatus();
 	pinDisplay.clear();
 	rerenderCodeLenses();
+	clearCoverage();
+	clearCoverProfilePath();
 }
 
 export function currentAutorunTestConfig(): TestConfig {
