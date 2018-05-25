@@ -9,6 +9,7 @@ Features:
 - Automatically runs the tests in a file when you open it.
 - Adds an "output" hover button to each test when the test output is aleady known.
 - Adds a "pin test" hover button to automatically run a test on every save and keep the status in view.
+- Adds code coverage for the pinned test in the left-hand gutter.
 
 ## How?
 

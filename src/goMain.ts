@@ -20,10 +20,12 @@ import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { implCursor } from './goImpl';
 import { initDiagnosticCollection, autotestDisplay } from './diags';
 import { setDefaultCodeLens } from './goBaseCodelens';
+import { initGoCover, removeCodeCoverage, getCodeCoverage } from './goCover';
 
 const DEBOUNCE_WAIT_TIME_MS = 200;
 
 export function activate(ctx: vscode.ExtensionContext): void {
+	initGoCover(ctx);
 	initDiagnosticCollection(ctx);
 
 	let testCodeLensProvider = new GoRunTestCodeLensProvider();
@@ -78,6 +80,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	// 2) The user changes the active text editor to a test file.
 	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(maybeAutotestCurrentFile));
 	maybeAutotestCurrentFile();
+
+	vscode.workspace.onDidChangeTextDocument(removeCodeCoverage, null, ctx.subscriptions);
+	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
 }
 
 export function deactivate() {
