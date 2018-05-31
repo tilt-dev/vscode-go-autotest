@@ -305,7 +305,7 @@ export function cleanUpOldAutotestFileOutput() {
 }
 
 export function updatePinnedTestLocation(u: vscode.Uri) {
-	if (autorunTestConfig.fileName === u.path) {
+	if (autorunTestConfig && autorunTestConfig.fileName === u.path) {
 		// Get all testFunctions from that file
 		vscode.workspace.openTextDocument(autorunTestConfig.fileName).then((document): Thenable<vscode.SymbolInformation[]> => {
 			return getTestFunctions(document, null);
