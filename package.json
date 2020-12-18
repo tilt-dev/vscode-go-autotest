@@ -28,7 +28,7 @@
     "dependencies": {
         "console-stamp": "^0.2.2",
         "diff": "~3.3.0",
-        "lodash": "^4.17.10",
+        "lodash": "^4.17.19",
         "vscode": "^1.1.4",
         "vscode-extension-telemetry": "^0.0.15"
     },
